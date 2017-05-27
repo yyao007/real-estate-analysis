@@ -5,8 +5,8 @@ Crawler for [BiggerPockets](https://www.biggerpockets.com/forums) forums.
 ## 2. activerain
 Crawler for [activerain](http://activerain.com/bloghome) posts.
 ## 3. anals
-    + Analyze the posts from both sites using natural language processing tools (nltk and sklearn) to find the key phrase for every city, state in every month.
-    + Use machine learning methods such as Naive Bayes Classifier to identify sentiment for posts from every city, state in every month.
+    * Analyze the posts from both sites using natural language processing tools (nltk and sklearn) to find the key phrase for every city, state in every month.
+    * Use machine learning methods such as Naive Bayes Classifier to identify sentiment for posts from every city, state in every month.
 
 # Directory Structure
 ```
