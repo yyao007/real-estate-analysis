@@ -1,5 +1,6 @@
 from db import *
-from features import Feature_extraction
+from features import filter_func, iter_monthrange
+from corenlp import StanfordCoreNLPPLUS
 from nltk import word_tokenize
 from nltk.classify import NaiveBayesClassifier
 from nltk.corpus import movie_reviews
@@ -14,7 +15,10 @@ seperator = '-' * 12
 naivebayes_file = "NBClassifier"
 polarity_score = {'pos': 1.0, 'neg': -1.0, 'neutral': 0.0}
 
-class sentiment_analysis(Feature_extraction):
+class sentiment_analysis:
+    def __init__(self):
+        database = DB()
+        self.session = database.get_session()
 
     def save_sentiment(self, url, classifier, sentiment):
         key, score = sentiment
@@ -28,6 +32,7 @@ class sentiment_analysis(Feature_extraction):
         )
         self.session.add(sent)
         self.session.commit()
+        self.session.remove()
 
     def iter_posts(self, url):
         # create a generator to iterate through each post
@@ -39,7 +44,7 @@ class sentiment_analysis(Feature_extraction):
 
         # To calculate tfidf of posts from each city, each month
         docs = {}
-        for monthrange in self.iter_monthrange(start_date[0], end_date[0]):
+        for monthrange in iter_monthrange(start_date[0], end_date[0]):
             print '{}--{} :'.format(monthrange[0], monthrange[1])
             # sys.stdout.flush()
             count = 0
@@ -53,16 +58,16 @@ class sentiment_analysis(Feature_extraction):
                 city = ' '.join(i[0].upper()+i[1:] for i in city.split())
                 state = post.state.strip().upper()
                 if city == previous[0] and state == previous[1]:
-                    tokens = [t.lower() for t in word_tokenize(post.body) if not self.filter_func(t)]
-                    text.append(tokens)
+                    # tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t)]
+                    text.append(post.body)
                 else: 
                     if text:
                         key = (previous[0], previous[1], monthrange[0])
                         count += 1
                         yield (key, text)
                         
-                    tokens = [t.lower() for t in word_tokenize(post.body) if not self.filter_func(t)]
-                    text = [tokens]
+                    # tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t)]
+                    text = [post.body]
                     previous = (city, state)
                     
             # To save the last city in the result query
@@ -90,7 +95,7 @@ class sentiment_analysis(Feature_extraction):
         sentim_analyzer = SentimentAnalyzer(classifier=classifier)
         all_words = sentim_analyzer.all_words([mark_negation(doc) for doc in training_docs])
         unigram_feats = sentim_analyzer.unigram_word_feats(all_words, top_n=5000)
-        unigrams = [w for w in unigram_feats if not self.filter_func(w)]
+        unigrams = [w for w in unigram_feats if not filter_func(w)]
         # print len(unigrams)
         sentim_analyzer.add_feat_extractor(extract_unigram_feats, unigrams=unigrams, handle_negation=True)
         training_set = sentim_analyzer.apply_features(training_docs)
@@ -126,8 +131,7 @@ class sentiment_analysis(Feature_extraction):
         for key,value in sorted(sentim_analyzer.evaluate(testing_set).items()):
             print('{0}: {1}'.format(key, value)) 
 
-    def polarity(self, docs, **kwargs):
-        NaiveBayes, Vader = kwargs['NaiveBayes'], kwargs['Vader']
+    def polarity(self, docs, NaiveBayes=None, Vader=None, st=None):
         score = 0
         total = len(docs)
         if NaiveBayes:
@@ -137,12 +141,15 @@ class sentiment_analysis(Feature_extraction):
                 score += polarity_score[sent]
         elif Vader:
             for doc in docs:
-                text = ' '.join(doc)
-                score += Vader.polarity_scores(text)['compound']
+                # text = ' '.join(doc)
+                score += Vader.polarity_scores(doc)['compound']
+        elif st:
+            for doc in docs
+                score += st.sentiment(doc)
         
         return score / total        
 
-    def classify_posts(self, url, classifier, **kwargs):
+    def classify_posts(self, url, NaiveBayes=None, Vader=None, st=None):
         print "Calculating sentiment for {}".format(url)
 
         count = 0
@@ -153,8 +160,10 @@ class sentiment_analysis(Feature_extraction):
             print "sentiment for {} (total: {}):".format(post[0], len(post[1])),
             sys.stdout.flush()
             # calculate polarity score for each post
-            score = self.polarity(post[1], **kwargs)
+            score = self.polarity(post[1], NaiveBayes, Vader, st)
             print "{0:.2f}".format(score)
+            
+            classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
             sentiment = (post[0], score)
             self.save_sentiment(url, classifier, sentiment)             
             
@@ -164,9 +173,9 @@ if __name__ == '__main__':
     
     urls = ['BiggerPockets', 'activerain']
     # urls = ['activerain']
-    classifiers = ['NaiveBayes', 'Vader']
-    classifiers = ['Vader']
-    NaiveBayes = Vader = None
+    classifiers = ['NaiveBayes', 'Vader', 'Stanford']
+    classifiers = ['NaiveBayes']
+    NaiveBayes = Vader = st = None
    
     for url in urls:
         sentiment = sentiment_analysis()
@@ -175,10 +184,12 @@ if __name__ == '__main__':
                 NaiveBayes = sentiment_analysis.NaiveBayes_load()
             elif classifier == 'Vader':
                 Vader = SentimentIntensityAnalyzer()
+            elif classifier == 'Stanford':
+                st = StanfordCoreNLPPLUS('http://localhost')
             
             start_time = datetime.now()
             print '{}Classify posts from {} using {}{}'.format(seperator, url, classifier, seperator)
-            sentiment.classify_posts(url, classifier, NaiveBayes=NaiveBayes, Vader=Vader)
+            sentiment.classify_posts(url, NaiveBayes=NaiveBayes, Vader=Vader, st=st)
             end_time = datetime.now()
             print 'Total time for {} using {}: {}'.format(url, classifier, end_time - start_time)
 

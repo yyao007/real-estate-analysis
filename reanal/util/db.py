@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, distinct
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.types import Integer, String, DateTime, Text, TIMESTAMP, Float
 from sqlalchemy.sql import func
@@ -22,6 +22,8 @@ class Posts(Base):
     body = Column(Text)
     likes = Column(Integer)
     tags = Column(String(500))
+    city = Column(String(100))
+    state = Column(String(50))
 
 class Users(Base):
     __tablename__ = 'forumusers'
@@ -46,6 +48,12 @@ class Users(Base):
     occupation = Column(String(767))
     goals = Column(Text) # real estate goals
     crawl_time = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
+
+class Cities(Base):
+    __tablename__ = 'cities'
+
+    city = Column(String(50), primary_key=True)
+    state = Column(String(2), primary_key=True)
 
 class Keyphrase(Base):
     __tablename__ = 'keyphrase'
@@ -83,14 +91,20 @@ class Sentiments(Base):
 
 class DB:
     def __init__(self):
-        self.engine = create_engine(connStr, convert_unicode=True, echo=False)
-        self.DB_session = sessionmaker(bind=self.engine)
-        self.session = self.DB_session()
+        self.engine = create_engine(connStr, pool_size=20, convert_unicode=True, echo=False)
+        self.session_factory = sessionmaker(bind=self.engine)
+        self.Session = scoped_session(self.session_factory)
         Base.metadata.create_all(self.engine)
 
     def get_session(self):
-        return self.session
+        return self.Session
 
+    def new_session(self):
+        self.New_Session = scoped_session(self.session_factory)
+        return self.New_Session
 
+    def remove(self):
+        self.Session.remove()
+        
 
 

@@ -27,6 +27,17 @@ def _document_frequency(X):
     else:
         return np.diff(sp.csc_matrix(X, copy=False).indptr)
 
+def filter_func(w, stopwords=[]):
+    return len(w) < 3 or w in stopwords or bool(re.search(r'[\d\@\.]|__', w)) 
+
+def iter_monthrange(start_date, end_date):
+    start = datetime(start_date.year, start_date.month, 1)
+    while start < end_date:
+        day = calendar.monthrange(start.year, start.month)[1]
+        yield (start, start.replace(day=day))
+        start += timedelta(days=day)
+
+
 class Feature_extraction:
     def __init__(self):
         database = DB()

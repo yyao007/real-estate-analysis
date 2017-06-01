@@ -5,9 +5,11 @@ from sqlalchemy.engine import ResultProxy
 import sys
 
 class Convert:
-    def __init__(self):
+    def __init__(self, file):
         db = DB()
         self.session = db.get_session()
+        self.file = file
+        self.abbr = self.load_abbr(self.file)
 
     def load_abbr(self, file):
         with open(file, 'r') as f:
@@ -21,29 +23,33 @@ class Convert:
             f.close()
         return d
 
-    def abbr_state(self, file):
-        abbr = self.load_abbr(file)
+    def abbreviate(self, state):
+        s = state.lower().strip()
+        a = self.abbr.get(s)
+        if not a:
+            s = s.split('(')[0].split(',')[0].split('-')[0].strip()
+            a = self.abbr.get(s)
+        if not a:
+            s = s.replace('.', '')
+            a = self.abbr.get(s)
+        if not a:
+            s = state.lower().strip().split(',')
+            if len(s) > 1:
+                s = s[1].strip()
+                a = self.abbr.get(s)
+        if not a:
+            s = state.lower().strip().split('&')[0].split('and')[0].strip()
+            a = self.abbr.get(s)
+
+        return a
+
+    def abbr_state(self):
         states = self.session.execute('select distinct(state) from forumusers')
         count = 0
         for state in states:
             if not state[0]:
                 continue
-            s = state[0].lower().strip()
-            a = abbr.get(s)
-            if not a:
-                s = s.split('(')[0].split(',')[0].split('-')[0].strip()
-                a = abbr.get(s)
-            if not a:
-                s = s.replace('.', '')
-                a = abbr.get(s)
-            if not a:
-                s = state[0].lower().strip().split(',')
-                if len(s) > 1:
-                    s = s[1].strip()
-                    a = abbr.get(s)
-            if not a:
-                s = state[0].lower().strip().split('&')[0].split('and')[0].strip()
-                a = abbr.get(s)
+            a = self.abbreviate(state[0])
             if a:
                 if state[0].isupper() and len(state[0]) == 2:
                     continue
@@ -80,9 +86,9 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         task = sys.argv[1]
         if task == 'state':
-            c = Convert()
+            c = Convert('../data/abbr.txt')
             print "Start abbreviating states..."
-            count = c.abbr_state('../data/abbr.txt')
+            count = c.abbr_state()
             print "Done! {} states changed".format(count)
         elif task == 'city':
             c = Convert()
