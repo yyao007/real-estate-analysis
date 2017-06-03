@@ -3,7 +3,7 @@ There are three projects in this repo:
 ### 1. [BiggerPockets](https://github.com/yyao007/real-estate-analysis/tree/master/BiggerPockets)
 Crawler for [BiggerPockets](https://www.biggerpockets.com/forums) forums.
 ### 2. [activerain](https://github.com/yyao007/real-estate-analysis/tree/master/activerain)
-Crawler for [activerain](http://activerain.com/bloghome) posts.
+Crawler for [activerain](http://activerain.com/bloghome) blogs.
 ### 3. [reanal](https://github.com/yyao007/real-estate-analysis/tree/master/reanal)
 + Analyze the posts from both sites using natural language processing tools (nltk and sklearn) to find the key phrase for every city, state in every month.
 + Use machine learning methods such as Naive Bayes Classifier to identify sentiment for posts from every city, state in every month.
