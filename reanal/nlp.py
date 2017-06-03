@@ -46,26 +46,26 @@ def get_parser():
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument('task', choices=tasks, metavar='task',
-                help='''choose from {%(choices)s}
+                help='''Choose from {%(choices)s}
   features: extract key phrases from posts
   sentiment: classify each post sentiment
   location: extract location from each post
   convert: simplify user's city and state''')
     parser.add_argument('-a', '--activerain', action='store_true',
-                help='process activerain (default: both)')
+                help='Process activerain (default: both)')
     parser.add_argument('-b', '--biggerpockets', action='store_true', 
-                help='process BiggerPockets (default: both)')
+                help='Process BiggerPockets (default: both)')
     parser.add_argument('-j', '--job', choices=jobs, default='key',
-                metavar='JOB', help='''use this flag with features (default: %(default)s)
+                metavar='JOB', help='''Job to do. Use this flag with features (default: %(default)s)
   key: find key phrase for each post
   bigram: find bigrams from all of the posts
   save: save all the posts to file''')
     parser.add_argument('-c', choices=classifiers, default=classifiers,
                 dest='classifiers', metavar='CLS', nargs='+',
-                help='''use this flag with sentiment 
+                help='''Classifiers used to classify sentiment. Use this flag with sentiment 
   default: %(default)s''')
     parser.add_argument('-n', '--norm', choices=norms, metavar='NORM',
-                help='''use this flag with convert 
+                help='''City or state to normalize. Use this flag with convert 
   options: %(choices)s''')
     return parser
 
