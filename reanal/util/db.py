@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from sqlalchemy import create_engine, distinct
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy import Column, ForeignKey

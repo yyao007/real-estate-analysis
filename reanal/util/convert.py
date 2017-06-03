@@ -3,9 +3,13 @@ from db import Users, DB
 from sqlalchemy import update
 from sqlalchemy.engine import ResultProxy
 import sys
+import os
+
+path = os.path.dirname(__file__)
+filename = os.path.join(path, '../data/abbr.txt')
 
 class Convert:
-    def __init__(self, file):
+    def __init__(self, file=filename):
         db = DB()
         self.session = db.get_session()
         self.file = file
@@ -77,7 +81,17 @@ class Convert:
                 self.session.commit()
 
         return count
-        
+
+    def start(self, task):
+        if task == 'state':
+            print "Start abbreviating states..."
+            count = self.abbr_state()
+            print "Done! {} states changed".format(count)
+        elif task == 'city':
+            print "Start normalizing cities..."
+            count = self.norm_city()
+            print "Done! {} cities changed".format(count)        
+
 
 if __name__ == '__main__':
     if len(sys.argv) <= 1:
@@ -86,7 +100,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         task = sys.argv[1]
         if task == 'state':
-            c = Convert('../data/abbr.txt')
+            c = Convert()
             print "Start abbreviating states..."
             count = c.abbr_state()
             print "Done! {} states changed".format(count)

@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+'''
+	Modified on 06/01/2017, by Yuan Yao
+
+	@author: Tianrui Yang
+	
+'''
+
 from itertools import islice
 from nltk.tag import StanfordNERTagger
 from nltk import word_tokenize, sent_tokenize

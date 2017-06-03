@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from db import *
 from corenlp import StanfordCoreNLPPLUS
 from sqlalchemy import distinct, func
@@ -34,10 +36,10 @@ class Location:
         self.new_session = self.db.new_session()
         # self.st = StanfordCoreNLP('/home/yyao009/stanford-corenlp-full-2016-10-31/')
         self.st = StanfordCoreNLPPLUS('http://localhost')
-        path = os.path.dirname(__file__)
-        file = os.path.join(path, '../data/abbr.txt')
-        self.convert = Convert(file)
-        self.pool = ThreadPool(16)
+        # path = os.path.dirname(__file__)
+        # file = os.path.join(path, '../data/abbr.txt')
+        self.convert = Convert()
+        self.pool = ThreadPool(24)
 
     def update_post(self, location):
         post, loc = location

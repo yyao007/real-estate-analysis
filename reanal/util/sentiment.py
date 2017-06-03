@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+
+'''
+    sentiment dataset: https://archive.ics.uci.edu/ml/datasets/Sentiment+Labelled+Sentences
+
+'''
+
 from db import *
 from features import filter_func, iter_monthrange
 from corenlp import StanfordCoreNLPPLUS
@@ -8,17 +15,43 @@ from nltk.sentiment import SentimentAnalyzer
 from nltk.sentiment.util import *
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from datetime import datetime
+from multiprocessing.dummy import Pool as ThreadPool
+from functools import partial
 import pickle
 import os
 
 seperator = '-' * 12
-naivebayes_file = "NBClassifier"
-polarity_score = {'pos': 1.0, 'neg': -1.0, 'neutral': 0.0}
+directory = os.path.dirname(__file__)
+relpath = '../classifier/NBClassifier'
+naivebayes_file = os.path.join(directory, relpath)
+polarity_score = {
+    'pos': 1.0,
+    'positive': 1.0,
+    '1': 1.0,
+    'neg': -1.0,
+    'negative': -1.0,
+    '0': -1.0,
+    'neutral': 0.0, 
+}
+
+def get_stopwords():
+    relpath = '../data/stop-word-list.txt'
+    filename = os.path.join(directory, relpath)
+    with open(filename, 'r') as f:
+        stopwords1 = [l.strip().lower() for l in f]
+    f.close()
+    custom_stopwords = ['com', 'www', 'www2', 'org', 'http', 'https', 'bigger', 'pockets', 'active', 'rain', 'url']
+    stopwords2 = nltk.corpus.stopwords.words('english')
+    return set(stopwords1 + stopwords2 + custom_stopwords)
+
 
 class sentiment_analysis:
     def __init__(self):
         database = DB()
         self.session = database.get_session()
+        self.new_session = self.db.new_session()
+        self.pool = ThreadPool(24)
+        self.stopwords = get_stopwords()
 
     def save_sentiment(self, url, classifier, sentiment):
         key, score = sentiment
@@ -34,10 +67,11 @@ class sentiment_analysis:
         self.session.commit()
         self.session.remove()
 
-    def iter_posts(self, url):
+    def iter_posts(self, url, classifier):
         # create a generator to iterate through each post
         url_like = '%' + url + '%'
-        posts = self.session.query(Posts.body, Users.city, Users.state).join(Users).filter(Posts.URL.like(url_like)).filter(func.length(Users.state)==2)
+        posts = self.session.query(Posts.body, Posts.city, Posts.state).\
+                filter(Posts.URL.like(url_like)).filter(func.length(Posts.state)==2)
         # location = self.session.query(Users.city, Users.state).filter(Users.source.like(url_like)).filter(func.length(Users.state)==2).group_by(Users.city, Users.state)
         start_date = self.session.query(Posts.postTime).filter(Posts.URL.like(url_like)).order_by(Posts.postTime).first()
         end_date = self.session.query(Posts.postTime).filter(Posts.URL.like(url_like)).order_by(Posts.postTime.desc()).first()
@@ -45,10 +79,18 @@ class sentiment_analysis:
         # To calculate tfidf of posts from each city, each month
         docs = {}
         for monthrange in iter_monthrange(start_date[0], end_date[0]):
-            print '{}--{} :'.format(monthrange[0], monthrange[1])
+            # check if this month is already been classified (Add this in future)
+            # isClassified = self.new_session.query(Sentiments).\
+            #         filter(Sentiments.classifier==classifier).\
+            #         filter(Sentiments.postTime==monthrange[0]).first()
+            # if isClassified:
+            #     continue
+
+            print '{}--{} :'.format(monthrange[0], monthrange[1]),
             # sys.stdout.flush()
             count = 0
-            monthlyPosts = posts.filter(Posts.postTime.between(monthrange[0], monthrange[1])).order_by(Users.city, Users.state)
+            monthlyPosts = posts.filter(Posts.postTime.between(monthrange[0], monthrange[1])).\
+                    order_by(Posts.city, Posts.state)
             # monthlyPosts = posts.filter(Users.city=='CAMBRIDGE').filter(Users.state=='MA').filter(Posts.postTime.between(monthrange[0], monthrange[1]))
             # print monthlyPosts.statement.compile(self.engine)
             text = []
@@ -70,7 +112,7 @@ class sentiment_analysis:
                     text = [post.body]
                     previous = (city, state)
                     
-            # To save the last city in the result query
+            # To yield the last city in the result query
             if text:
                 key = (post.city, post.state, monthrange[0])
                 count += 1
@@ -78,26 +120,72 @@ class sentiment_analysis:
                 
             print 'total: {}'.format(count)
 
+    def load_tweets(self):
+        stopwords = get_stopwords()
+        filename = os.path.join(directory, '../data/utf_8full_training_dataset.csv')
+        tweets = {}
+        with open(filename, 'r') as f:
+            data = csv.reader(f)
+            for d in data:
+                key = re.sub(r'\W', '', d[0])
+                tokens = [t.lower().encode('utf-8') for t in word_tokenize(d[1].decode('utf-8')) if not filter_func(t, stopwords)]
+                if tweets.get(key):
+                    tweets[key].append(tokens)
+                else:
+                    tweets[key] = [tokens]
+        f.close()
+        # testing data cutoff
+        cutoff = 0.05
+        testing_docs = [(t, k) for k in tweets for t in tweets[k][:int(len(tweets[k])*cutoff)]]
+        training_docs = [(t, k) for k in tweets for t in tweets[k][int(len(tweets[k])*cutoff):]]
+        return training_docs, testing_docs
+
+    def load_web_reviews(self):
+        stopwords = get_stopwords()
+        filenames = [
+            '../data/amazon_cells_labelled.txt', 
+            '../data/imdb_labelled.txt', 
+            '../data/yelp_labelled.txt',
+        ]
+        reviews = {}
+        for file in filenames:
+            filename = os.path.join(directory, file)
+            with open(filename, 'r') as f:
+                for line in f:
+                    d = line.strip().split('\t')
+                    tokens = [t.lower().encode('utf-8') for t in word_tokenize(d[0].decode('utf-8')) if not filter_func(t, stopwords)]
+                    if reviews.get(d[1]):
+                        reviews[d[1]].append(tokens)
+                    else:
+                        reviews[d[1]] = [tokens]
+            f.close()
+
+        cutoff = 0.1
+        testing_docs = [(t, k) for k in reviews for t in reviews[k][:int(len(reviews[k])*cutoff)]]
+        training_docs = [(t, k) for k in reviews for t in reviews[k][int(len(reviews[k])*cutoff):]]
+        return training_docs, testing_docs
+
     def load_data(self, classifier=None):
         # source: http://www.nltk.org/book/ch06.html, http://www.nltk.org/howto/sentiment.html
         print "Loading training data...",
         sys.stdout.flush()
-        documents = [(word_tokenize(movie_reviews.raw(fileid)), category)
-                    for category in movie_reviews.categories()
-                    for fileid in movie_reviews.fileids(category)]
-        random.shuffle(documents)
-        cutoff = int(len(documents) * 0.1)
-        training_docs, testing_docs = documents[cutoff:], documents[:cutoff]
+        training_docs, testing_docs = self.load_web_reviews()
+
+        # documents = [(word_tokenize(movie_reviews.raw(fileid)), category)
+        #             for category in movie_reviews.categories()
+        #             for fileid in movie_reviews.fileids(category)]
+        # random.shuffle(documents)
+        # cutoff = int(len(documents) * 0.1)
+        # training_docs, testing_docs = documents[cutoff:], documents[:cutoff]
         print "Done!"
         
         print "Extracting unigram features and applying to training data...",
         sys.stdout.flush()
         sentim_analyzer = SentimentAnalyzer(classifier=classifier)
         all_words = sentim_analyzer.all_words([mark_negation(doc) for doc in training_docs])
-        unigram_feats = sentim_analyzer.unigram_word_feats(all_words, top_n=5000)
-        unigrams = [w for w in unigram_feats if not filter_func(w)]
+        unigram_feats = sentim_analyzer.unigram_word_feats(all_words)#, top_n=5000)
         # print len(unigrams)
-        sentim_analyzer.add_feat_extractor(extract_unigram_feats, unigrams=unigrams, handle_negation=True)
+        sentim_analyzer.add_feat_extractor(extract_unigram_feats, unigrams=unigram_feats, handle_negation=True)
         training_set = sentim_analyzer.apply_features(training_docs)
         testing_set = sentim_analyzer.apply_features(testing_docs)
         print "Done!"
@@ -127,7 +215,7 @@ class sentiment_analysis:
 
     def NaiveBayes_evaluate(self):
         sentim_analyzer = self.NaiveBayes_load()
-        # sentim_analyzer, training_set, testing_set = self.load_data(classifier=classifier)
+        temp, training_set, testing_set = self.load_data()
         for key,value in sorted(sentim_analyzer.evaluate(testing_set).items()):
             print('{0}: {1}'.format(key, value)) 
 
@@ -135,39 +223,67 @@ class sentiment_analysis:
         score = 0
         total = len(docs)
         if NaiveBayes:
-            doc_set = NaiveBayes.apply_features(docs, labeled=False)
-            sents = NaiveBayes.classifier.classify_many(doc_set)
-            for sent in sents:
+            for doc in docs:
+                # doc_set = NaiveBayes.apply_features(docs, labeled=False)
+                # sents = NaiveBayes.classifier.classify_many(doc_set)
+                tokens = [t.lower() for t in word_tokenize(doc) if not filter_func(t, self.stopwords)]
+                sent = NaiveBayes.classify(tokens)
                 score += polarity_score[sent]
         elif Vader:
             for doc in docs:
                 # text = ' '.join(doc)
                 score += Vader.polarity_scores(doc)['compound']
         elif st:
-            for doc in docs
-                score += st.sentiment(doc)
+            for doc in docs:
+                sent = st.sentiment(doc)
+                if sent:
+                    score += sent
         
         return score / total        
 
+    def process_sentiment(self, post, url=None, NaiveBayes=None, Vader=None, st=None):
+        print "sentiment for {} (total: {}):".format(post[0], len(post[1]))
+        # sys.stdout.flush()
+        # calculate polarity score for each post
+        score = self.polarity(post[1], NaiveBayes, Vader, st)
+        print "{0:.2f}".format(score)
+        
+        classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
+        sentiment = (post[0], score)
+        self.save_sentiment(url, classifier, sentiment)
+
     def classify_posts(self, url, NaiveBayes=None, Vader=None, st=None):
         print "Calculating sentiment for {}".format(url)
+        classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
+        self.pool.map(partial(self.process_sentiment, url=url, NaiveBayes=NaiveBayes,\
+                            Vader=Vader, st=st), self.iter_posts(url, classifier))
 
-        count = 0
-        for post in self.iter_posts(url):
-            if count % 100 == 0:
-                print 'classified {} posts'.format(count)
-            count += 1
-            print "sentiment for {} (total: {}):".format(post[0], len(post[1])),
-            sys.stdout.flush()
-            # calculate polarity score for each post
-            score = self.polarity(post[1], NaiveBayes, Vader, st)
-            print "{0:.2f}".format(score)
-            
-            classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
-            sentiment = (post[0], score)
-            self.save_sentiment(url, classifier, sentiment)             
-            
 
+        # count = 0
+        # for post in self.iter_posts(url):
+        #     if count % 100 == 0:
+        #         print 'classified {} posts'.format(count)
+        #     count += 1
+        #     print "sentiment for {} (total: {}):".format(post[0], len(post[1])),
+        #     sys.stdout.flush()
+        #     # calculate polarity score for each post
+        #     score = self.polarity(post[1], NaiveBayes, Vader, st)
+        #     print "{0:.2f}".format(score)
+            
+        #     classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
+        #     sentiment = (post[0], score)
+        #     self.save_sentiment(url, classifier, sentiment)             
+    
+    def start(self, classifier, site):
+        NaiveBayes = Vader = st = None
+        if classifier == 'NaiveBayes':
+            NaiveBayes = self.NaiveBayes_load()
+        elif classifier == 'Vader':
+            Vader = SentimentIntensityAnalyzer()
+        elif classifier == 'Stanford':
+            st = StanfordCoreNLPPLUS('http://localhost')
+        print '{}Classify posts from {} using {}{}'.format(seperator, site, classifier, seperator)
+        self.classify_posts(site, NaiveBayes=NaiveBayes, Vader=Vader, st=st)
 
 if __name__ == '__main__':
     
@@ -177,16 +293,15 @@ if __name__ == '__main__':
     classifiers = ['NaiveBayes']
     NaiveBayes = Vader = st = None
    
-    for url in urls:
+    for classifier in classifiers:
         sentiment = sentiment_analysis()
-        for classifier in classifiers:
-            if classifier == 'NaiveBayes':
-                NaiveBayes = sentiment_analysis.NaiveBayes_load()
-            elif classifier == 'Vader':
-                Vader = SentimentIntensityAnalyzer()
-            elif classifier == 'Stanford':
-                st = StanfordCoreNLPPLUS('http://localhost')
-            
+        if classifier == 'NaiveBayes':
+            NaiveBayes = sentiment.NaiveBayes_load()
+        elif classifier == 'Vader':
+            Vader = SentimentIntensityAnalyzer()
+        elif classifier == 'Stanford':
+            st = StanfordCoreNLPPLUS('http://localhost')
+        for url in urls:
             start_time = datetime.now()
             print '{}Classify posts from {} using {}{}'.format(seperator, url, classifier, seperator)
             sentiment.classify_posts(url, NaiveBayes=NaiveBayes, Vader=Vader, st=st)

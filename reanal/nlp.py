@@ -1,14 +1,107 @@
+# -*- coding: utf-8 -*-
 import sys
+import argparse
+from functools import wraps
+from datetime import datetime
+
+def timeit(f):
+    @wraps(f)
+    def wrap(*args, **kw):
+        ts = datetime.now()
+        result = f(*args, **kw)
+        te = datetime.now()
+        print 'total time for {} on {}: {}'.format(\
+                f.__name__, kw['site'], te-ts)
+        return result
+    return wrap
+
+@timeit
+def process_features(job, site):
+    feature = Feature_extraction()
+    feature.start(job, site)
+
+@timeit
+def process_sentiment(classifier, site):
+    sentiment = sentiment_analysis()
+    sentiment.start(classifier, site)
+
+@timeit
+def process_location():
+    loc = Location()
+    loc.process_posts()
+
+@timeit
+def process_convert(norm):
+    c = Convert()
+    c.start(norm)
+
+def get_parser():
+    tasks = ['features', 'sentiment', 'location', 'convert']
+    jobs = ['key', 'bigram', 'save']
+    classifiers = ['NaiveBayes', 'Vader', 'Stanford']
+    norms = ['city', 'state']
+
+    parser = argparse.ArgumentParser(
+        description='natural language processing for real estate forums',
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument('task', choices=tasks, metavar='task',
+                help='''choose from {%(choices)s}
+  features: extract key phrases from posts
+  sentiment: classify each post sentiment
+  location: extract location from each post
+  convert: simplify user's city and state''')
+    parser.add_argument('-a', '--activerain', action='store_true',
+                help='process activerain (default: both)')
+    parser.add_argument('-b', '--biggerpockets', action='store_true', 
+                help='process BiggerPockets (default: both)')
+    parser.add_argument('-j', '--job', choices=jobs, default='key',
+                metavar='JOB', help='''use this flag with features (default: %(default)s)
+  key: find key phrase for each post
+  bigram: find bigrams from all of the posts
+  save: save all the posts to file''')
+    parser.add_argument('-c', choices=classifiers, default=classifiers,
+                dest='classifiers', metavar='CLS', nargs='+',
+                help='''use this flag with sentiment 
+  default: %(default)s''')
+    parser.add_argument('-n', '--norm', choices=norms, metavar='NORM',
+                help='''use this flag with convert 
+  options: %(choices)s''')
+    return parser
+
 
 if __name__ == '__main__':
-	argc = len(sys.argv)
-	if argc <= 3:
-		print 'Usage: python nlp.py features/sentiment TASK [BiggerPockets, activerain]'
-		exit()
-	if argc > 3:
-		urls = sys.argv[3:]
-	else:
-		urls = ['BiggerPockets', 'activerain']
-		
-	analysis, task = sys.argv[1:3]
-	
+    parser = get_parser()
+    args = parser.parse_args()
+    # handle sites
+    sites = []
+    if args.activerain:
+        sites.append('activerain')
+    if args.biggerpockets:
+        sites.append('BiggerPockets')
+    if not sites:
+        sites = ['BiggerPockets', 'activerain']
+
+    if args.task == 'features':
+        from util.features import Feature_extraction
+        for site in sites:
+            process_features(args.job, site)
+
+    elif args.task == 'sentiment':
+        from util.sentiment import sentiment_analysis
+        for site in sites:
+            for classifier in args.classifiers:
+                process_sentiment(classifier, site)
+
+    elif args.task == 'location':
+        from util.location import Location
+        process_location()
+
+    elif args.task == 'convert':
+        from util.convert import Convert
+        if not args.norm:
+            print 'Error: Must specify a normalization'
+            exit(0)
+        process_convert(args.norm)
+
+

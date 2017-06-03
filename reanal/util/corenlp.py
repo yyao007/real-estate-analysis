@@ -1,21 +1,33 @@
-# _*_coding:utf-8_*_
+# -*- coding: utf-8 -*-
 
 # Modify stanfordcorenlp module to include sentiment analysis
 from stanfordcorenlp import StanfordCoreNLP
 import requests
 import json
 
-polarity_score = {'Positive': 1.0, 'Negative': -1.0, 'Neutral': 0.0}
+polarity_score = {'Verypositive': 100, 'Positive': 75, 'Neutral': 50, 'Negative': 25, 'Verynegative': 0}
+
+# normalize score to range [-1, 1]
+def nomarlize(num):
+    return num / 50.0 - 1
 
 class StanfordCoreNLPPLUS(StanfordCoreNLP):
     def sentiment(self, sentence):
-        r_dict = self._request('sentiment', sentence.encode('utf-8'))
+        r_dict = {'sentences': []}
+        count = 0
+        while not r_dict['sentences']:
+            # retry 1 time
+            if count >= 2:
+                return
+            r_dict = self._request('sentiment', sentence.encode('utf-8'))
+            count += 1
+    
         sentiments=[s['sentiment'] for s in r_dict['sentences']]
         senti = 0
         total = len(r_dict['sentences'])
         for sent in sentiments:
             senti += polarity_score[sent]
-        return senti / total
+        return nomarlize(float(senti) / total)
 
     # source: https://github.com/Lynten/stanford-corenlp/blob/master/stanfordcorenlp/corenlp.py
     def _request(self, annotators=None, data=None):
