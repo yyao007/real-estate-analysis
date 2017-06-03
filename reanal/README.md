@@ -15,6 +15,29 @@ $ python nlp.py TASK [-j JOB] [-c CLS [CLS ...]] [-n NORM] [-a] [-b]
 There is also a help message from the program:
 ```
 $ python nlp.py -h
+usage: nlp.py [-h] [-a] [-b] [-j JOB] [-c CLS [CLS ...]] [-n NORM] task
+
+natural language processing for real estate forums
+
+positional arguments:
+  task                  Choose from {features, sentiment, location, convert}
+                          features: extract key phrases from posts
+                          sentiment: classify each post sentiment
+                          location: extract location from each post
+                          convert: simplify user's city and state
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -a, --activerain      Process activerain (default: both)
+  -b, --biggerpockets   Process BiggerPockets (default: both)
+  -j JOB, --job JOB     Job to do. Use this flag with features (default: key)
+                          key: find key phrase for each post
+                          bigram: find bigrams from all of the posts
+                          save: save all the posts to file
+  -c CLS [CLS ...]      Classifiers used to classify sentiment. Use this flag with sentiment 
+                          default: ['NaiveBayes', 'Vader', 'Stanford']
+  -n NORM, --norm NORM  City or state to normalize. Use this flag with convert 
+                          options: city, state
 ```
 
 Example to run the program:
@@ -32,6 +55,6 @@ $ python nlp.py convert -n state
 ## Directory Structure
 * [util/](https://github.com/yyao007/real-estate-analysis/tree/master/reanal/util): All source codes that the program needs
 * [classifier/](https://github.com/yyao007/real-estate-analysis/tree/master/reanal/classifier): All trained classier to classify sentiment
-* [other](https://github.com/yyao007/real-estate-analysis/tree/master/reanal/other): Some test scripts
+* [other/](https://github.com/yyao007/real-estate-analysis/tree/master/reanal/other): Some test scripts
 
 
