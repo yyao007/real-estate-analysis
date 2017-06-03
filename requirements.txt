@@ -13,10 +13,9 @@ html==1.16
 idna==2.2
 incremental==16.10.1
 ipaddress==1.0.18
-ipython==5.3.0
-ipython-genutils==0.2.0
 lxml==3.7.2
 mock==2.0.0
+mysql-connector-python-rf==2.2.2
 MySQL-python==1.2.5
 nltk==3.2.2
 numpy==1.12.1
@@ -52,8 +51,8 @@ simplegeneric==0.8.1
 six==1.10.0
 sklearn==0.0
 SQLAlchemy==1.1.5
+stanfordcorenlp==3.7.0.1
 stem==1.5.4
-tensorflow==0.12.0
 tqdm==4.11.2
 traitlets==4.3.2
 Twisted==16.6.0
