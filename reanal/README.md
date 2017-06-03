@@ -80,7 +80,7 @@ Currently, the CoreNLP Server is running in a screen session on v246 and every o
 
 ## Tables
 There are four tables used to store the result.
-1. keyphrase
+#### 1. keyphrase
 ```
 +------------+--------------+------+-----+---------+-------+
 | Field      | Type         | Null | Key | Default | Extra |
@@ -95,7 +95,7 @@ There are four tables used to store the result.
 ```
 Store top 50 key phrases from every (city, state, month) posts. The tfidf score is to rank the importance of each key phrase.
 
-2. sentiment
+#### 2. sentiment
 ```
 +------------+--------------+------+-----+---------+-------+
 | Field      | Type         | Null | Key | Default | Extra |
@@ -110,7 +110,7 @@ Store top 50 key phrases from every (city, state, month) posts. The tfidf score 
 ```
 Store the sentiment of posts as a float number in range [-1, 1]. -1 is very negative while 1 is very positive. Most sentiments are between very negative and very positive.
 
-3. unigrams
+#### 3. unigrams
 ```
 +------------+--------------+------+-----+---------+-------+
 | Field      | Type         | Null | Key | Default | Extra |
@@ -122,7 +122,7 @@ Store the sentiment of posts as a float number in range [-1, 1]. -1 is very nega
 ```
 Store all the unigrams that have \_df >= 7 from all the posts. Total
 
-4. bigrams
+#### 4. bigrams
 ```
 +------------+--------------+------+-----+---------+-------+
 | Field      | Type         | Null | Key | Default | Extra |
