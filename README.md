@@ -4,41 +4,65 @@ There are three projects in this repo:
 Crawler for [BiggerPockets](https://www.biggerpockets.com/forums) forums.
 ## 2. activerain
 Crawler for [activerain](http://activerain.com/bloghome) posts.
-## 3. anals
+## 3. reanal
 + Analyze the posts from both sites using natural language processing tools (nltk and sklearn) to find the key phrase for every city, state in every month.
 + Use machine learning methods such as Naive Bayes Classifier to identify sentiment for posts from every city, state in every month.
 
 # Directory Structure
 ```
-real-estate-analysis
-|____requirements.txt
-|____README
-|____reanal
-| |____log
-| | |____out.txt
-| | |____sent.txt
-| |____classifier
-| | |____NBClassifier_backup
-| |______init__.py
-| |____data
-| | |____stop-word-list.txt
-| | |____activerain_posts.txt
-| | |____BiggerPockets_posts.txt
-| | |____abbr.txt
-| | |____BiggerPockets_posts_test.txt
-| |____other
-| | |____tensorflow.sh
-| |____util
-| | |____sentiment.py
-| | |____db.pyc
-| | |______init__.py
-| | |____features.pyc
-| | |______init__.pyc
-| | |____features.py
-| | |____convert-state.py
-| | |____db.py
-| |______init__.pyc
-| |____nlp.py
+.
+├── BiggerPockets
+│   ├── BiggerPockets
+│   │   ├── __init__.py
+│   │   ├── items.py
+│   │   ├── middlewares.py
+│   │   ├── pipelines.py
+│   │   ├── settings.py
+│   │   └── spiders
+│   │       ├── __init__.py
+│   │       └── forum.py
+│   ├── LICENSE.md
+│   ├── README.md
+│   ├── requirements.txt
+│   ├── scrapy.cfg
+│   └── start.sh
+├── LICENSE.md
+├── README.md
+├── activerain
+│   ├── LICENSE.md
+│   ├── README.md
+│   ├── activerain
+│   │   ├── __init__.py
+│   │   ├── items.py
+│   │   ├── middlewares.py
+│   │   ├── pipelines.py
+│   │   ├── settings.py
+│   │   └── spiders
+│   │       ├── __init__.py
+│   │       └── blog.py
+│   ├── scrapy.cfg
+│   └── start.sh
+├── reanal
+│   ├── __init__.py
+│   ├── classifier
+│   │   ├── NBClassifier
+│   │   ├── NBClassifier_movie_review
+│   │   └── NBClassifier_twitter
+│   ├── nlp.py
+│   ├── other
+│   │   └── tensorflow.sh
+│   └── util
+│       ├── __init__.py
+│       ├── convert.py
+│       ├── corenlp.py
+│       ├── db.py
+│       ├── features.py
+│       ├── location.py
+│       ├── main.py
+│       └── sentiment.py
+└── requirements.txt
+
+10 directories, 40 files
 ```
 
 # Install Dependencies
