@@ -1,10 +1,10 @@
 # Natural Language Analysis for Real Estate Forums
 This program is to analyze the posts crawled from BiggerPockets and activerain.
 Now it can do:
-* key phrase extraction (source: [real-estate-analysis/reanal/util/features.py](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/util/features.py))
-* sentiment analysis (source: [real-estate-analysis/reanal/util/sentiment.py](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/util/sentiment.py))
-* location extraction (source: [real-estate-analysis/reanal/util/location.py](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/util/location.py))
-* state/city normalization (source: [real-estate-analysis/reanal/util/convert.py](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/util/convert.py))
+* key phrase extraction (source: [util/features.py](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/util/features.py))
+* sentiment analysis (source: [util/sentiment.py](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/util/sentiment.py))
+* location extraction (source: [util/location.py](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/util/location.py))
+* state/city normalization (source: [util/convert.py](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/util/convert.py))
 
 ## How to run
 It is recommended to run this program in a virtual environment (see: [Install Dependencies](https://github.com/yyao007/real-estate-analysis#install-dependencies)). The command to run this program is:
@@ -78,3 +78,59 @@ to
 
 Currently, the CoreNLP Server is running in a screen session on v246 and every one can access it.
 
+## Tables
+There are four tables used to store the result.
+### 1. keyphrase
+```
++------------+--------------+------+-----+---------+-------+
+| Field      | Type         | Null | Key | Default | Extra |
++------------+--------------+------+-----+---------+-------+
+| site       | varchar(500) | NO   | PRI | NULL    |       |
+| city       | varchar(100) | NO   | PRI | NULL    |       |
+| state      | varchar(50)  | NO   | PRI | NULL    |       |
+| postTime   | datetime     | NO   | PRI | NULL    |       |
+| key_phrase | varchar(100) | NO   | PRI | NULL    |       |
+| tfidf      | float        | YES  |     | NULL    |       |
++------------+--------------+------+-----+---------+-------+
+```
+Store top 50 key phrases from every (city, state, month) posts. The tfidf score is to rank the importance of each key phrase.
+
+### 2. sentiment
+```
++------------+--------------+------+-----+---------+-------+
+| Field      | Type         | Null | Key | Default | Extra |
++------------+--------------+------+-----+---------+-------+
+| site       | varchar(500) | NO   | PRI | NULL    |       |
+| city       | varchar(100) | NO   | PRI | NULL    |       |
+| state      | varchar(50)  | NO   | PRI | NULL    |       |
+| postTime   | datetime     | NO   | PRI | NULL    |       |
+| classifier | varchar(100) | NO   | PRI | NULL    |       |
+| polarity   | float        | YES  |     | NULL    |       |
++------------+--------------+------+-----+---------+-------+
+```
+Store the sentiment of posts as a float number in range [-1, 1]. -1 is very negative while 1 is very positive. Most sentiments are between very negative and very positive.
+
+### 3. unigrams
+```
++------------+--------------+------+-----+---------+-------+
+| Field      | Type         | Null | Key | Default | Extra |
++------------+--------------+------+-----+---------+-------+
+| site       | varchar(500) | NO   | PRI | NULL    |       |
+| key_phrase | varchar(100) | NO   | PRI | NULL    |       |
+| _df        | int(11)      | YES  |     | NULL    |       |
++------------+--------------+------+-----+---------+-------+
+```
+Store all the unigrams that have \_df >= 7 from all the posts. Total
+
+## 4. bigrams
+```
++------------+--------------+------+-----+---------+-------+
+| Field      | Type         | Null | Key | Default | Extra |
++------------+--------------+------+-----+---------+-------+
+| site       | varchar(500) | NO   | PRI | NULL    |       |
+| key_phrase | varchar(100) | NO   | PRI | NULL    |       |
+| freq       | int(11)      | YES  |     | NULL    |       |
+| pmi        | float        | YES  |     | NULL    |       |
++------------+--------------+------+-----+---------+-------+
+```
+Store top 5000 bigrams with most pmi score for each site.
