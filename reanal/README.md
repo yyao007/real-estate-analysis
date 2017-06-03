@@ -57,4 +57,24 @@ $ python nlp.py convert -n state
 * [classifier/](https://github.com/yyao007/real-estate-analysis/tree/master/reanal/classifier): All trained classier to classify sentiment
 * [other/](https://github.com/yyao007/real-estate-analysis/tree/master/reanal/other): Some test scripts
 
+## CoreNLP Server Issue
+Because the [Stanford CoreNLP](https://stanfordnlp.github.io/CoreNLP/index.html) library is written in java, this program uses a python wrapper from [stanford-corenlp](https://github.com/Lynten/stanford-corenlp) to run the [CoreNLP server](https://stanfordnlp.github.io/CoreNLP/corenlp-server.html). To start the server manually, use the following command:
+```
+$ # Download the newest CoreNLP
+$ wget http://nlp.stanford.edu/software/stanford-corenlp-full-2016-10-31.zip
+$ unzip stanford-corenlp-full-2016-10-31.zip
+$ java -mx4g -cp /path/to/stanford-corenlp-full-2016-10-31/* edu.stanford.nlp.pipeline.StanfordCoreNLPServer -port 9000 -timeout 15000 -quiet 1
+```
+Or, if you want to start the server in the program, change the following lines in [util/location.py](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/util/location.py#L37):
+```
+37        # self.st = StanfordCoreNLP('/home/yyao009/stanford-corenlp-full-2016-10-31/')
+38        self.st = StanfordCoreNLPPLUS('http://localhost')
+```
+to
+```
+37        self.st = StanfordCoreNLP('/path/to/stanford-corenlp-full-2016-10-31/')
+38        # self.st = StanfordCoreNLPPLUS('http://localhost')
+```
+
+Currently, the CoreNLP Server is running in a screen session on v246 and every one can access it.
 
