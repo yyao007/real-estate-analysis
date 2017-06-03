@@ -1,4 +1,8 @@
 # Activerain
+To start the program, run:
+```
+$ ./start.sh
+```
 
 There are two tables to store the data (use the same table with BiggerPockets):
 
@@ -7,7 +11,7 @@ There are two tables to store the data (use the same table with BiggerPockets):
 +-------------+--------------+------+-----+---------+-------+
 | Field       | Type         | Null | Key | Default | Extra |
 +-------------+--------------+------+-----+---------+-------+
-| URL         | varchar(500) | NO   | PRI | NULL    |       |
+| URL         | varchar(500) | NO   | PRI |         |       |
 | replyid     | int(11)      | NO   | PRI | NULL    |       |
 | pid         | int(11)      | YES  |     | NULL    |       |
 | title       | varchar(500) | YES  |     | NULL    |       |
@@ -15,10 +19,12 @@ There are two tables to store the data (use the same table with BiggerPockets):
 | categoryURL | varchar(500) | YES  |     | NULL    |       |
 | uid         | varchar(50)  | YES  | MUL | NULL    |       |
 | replyTo     | int(11)      | YES  |     | NULL    |       |
-| postTime    | datetime     | YES  |     | NULL    |       |
+| postTime    | datetime     | YES  | MUL | NULL    |       |
 | body        | text         | YES  |     | NULL    |       |
 | likes       | int(11)      | YES  |     | NULL    |       |
 | tags        | varchar(500) | YES  |     | NULL    |       |
+| city        | varchar(100) | YES  | MUL | NULL    |       |
+| state       | varchar(50)  | YES  |     | NULL    |       |
 +-------------+--------------+------+-----+---------+-------+
 ```
 ### forumusers:
