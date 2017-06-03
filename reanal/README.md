@@ -55,6 +55,7 @@ $ python nlp.py convert -n state
 ## Directory Structure
 * [util/](https://github.com/yyao007/real-estate-analysis/tree/master/reanal/util): All source codes that the program needs
 * [classifier/](https://github.com/yyao007/real-estate-analysis/tree/master/reanal/classifier): All trained classier to classify sentiment
+* [data/](https://github.com/yyao007/real-estate-analysis/tree/master/reanal/data): Training datasets and some data needed by the program
 * [other/](https://github.com/yyao007/real-estate-analysis/tree/master/reanal/other): Some test scripts
 
 ## CoreNLP Server Issue
