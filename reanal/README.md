@@ -66,12 +66,12 @@ $ unzip stanford-corenlp-full-2016-10-31.zip
 $ java -mx4g -cp /path/to/stanford-corenlp-full-2016-10-31/* edu.stanford.nlp.pipeline.StanfordCoreNLPServer -port 9000 -timeout 15000 -quiet 1
 ```
 Or, if you want to start the server in the program, change the following lines in [util/location.py](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/util/location.py#L37):
-```
+```python
 37        # self.st = StanfordCoreNLP('/home/yyao009/stanford-corenlp-full-2016-10-31/')
 38        self.st = StanfordCoreNLPPLUS('http://localhost')
 ```
 to
-```
+```python
 37        self.st = StanfordCoreNLP('/path/to/stanford-corenlp-full-2016-10-31/')
 38        # self.st = StanfordCoreNLPPLUS('http://localhost')
 ```
