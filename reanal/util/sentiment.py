@@ -234,10 +234,12 @@ class sentiment_analysis:
                 # text = ' '.join(doc)
                 score += Vader.polarity_scores(doc)['compound']
         elif st:
+            total = 0
             for doc in docs:
                 sent = st.sentiment(doc)
                 if sent:
                     score += sent
+                    total += 1
         
         return score / total        
 
