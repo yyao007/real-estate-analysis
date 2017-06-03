@@ -10,7 +10,7 @@ Crawler for [activerain](http://activerain.com/bloghome) posts.
 + Use Stanford CoreNLP library to extract location from each post. ([corenlp server issue](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/README.md#corenlp-server-issue))
 
 ## Steps to run the whole project
-### 1. Crawl from BiggerPockets and activerain
+#### 1. Crawl from BiggerPockets and activerain
 This step takes about two days
 ```
 $ cd /real-estate-analysis/BiggerPockets/
@@ -18,20 +18,20 @@ $ ./start.sh # run BiggerPockets crawler
 $ cd /real-estate-analysis/activerain/
 $ ./start.sh # activerain crawler can run at the same time
 ```
-### 2. Normalize city and state for newly added user
+#### 2. Normalize city and state for newly added user
 This step is fast
 ```
 $ cd /real-estate-analysis/reanal/
 $ python nlp.py convert state
 $ python nlp.py convert city
 ```
-### 3. Extract location from each post
+#### 3. Extract location from each post
 This step finishes in one day (or a few hours)
 ```
 $ cd /real-estate-analysis/reanal/
 $ python nlp.py location
 ```
-### 4. Extract top 50 key phrases and classify sentiment for posts from every (city, state, month)
+#### 4. Extract top 50 key phrases and classify sentiment for posts from every (city, state, month)
 This step takes few hours
 ```
 $ cd /real-estate-analysis/reanal/
