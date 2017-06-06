@@ -247,7 +247,7 @@ class Feature_extraction:
         # seperate posts from BiggerPockets and activerain
         docs = self.extract_posts(url)
 
-        print '{}Calculating TFIUnigrams for {}{}'.format(seperator, url, seperator)         
+        print '{}Calculating TFIDF for {}{}'.format(seperator, url, seperator)         
         print 'total docs: {}'.format(len(docs))
         vocabulary = self.find_vocabulary(url, docs)
         tfidf = self.tf_idf(url, docs, vocabulary)

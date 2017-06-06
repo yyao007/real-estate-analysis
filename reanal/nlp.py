@@ -10,8 +10,9 @@ def timeit(f):
         ts = datetime.now()
         result = f(*args, **kw)
         te = datetime.now()
+        site = kw.get('site')
         print 'total time for {} on {}: {}'.format(\
-                f.__name__, kw['site'], te-ts)
+                f.__name__, site, te-ts)
         return result
     return wrap
 
@@ -91,6 +92,7 @@ if __name__ == '__main__':
         from util.sentiment import sentiment_analysis
         for site in sites:
             for classifier in args.classifiers:
+                print classifier, site
                 process_sentiment(classifier, site)
 
     elif args.task == 'location':

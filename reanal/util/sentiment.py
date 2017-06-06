@@ -49,8 +49,8 @@ class sentiment_analysis:
     def __init__(self):
         database = DB()
         self.session = database.get_session()
-        self.new_session = self.db.new_session()
-        self.pool = ThreadPool(24)
+        self.new_session = database.new_session()
+        self.pool = ThreadPool(16)
         self.stopwords = get_stopwords()
 
     def save_sentiment(self, url, classifier, sentiment):
@@ -80,11 +80,11 @@ class sentiment_analysis:
         docs = {}
         for monthrange in iter_monthrange(start_date[0], end_date[0]):
             # check if this month is already been classified (Add this in future)
-            # isClassified = self.new_session.query(Sentiments).\
-            #         filter(Sentiments.classifier==classifier).\
-            #         filter(Sentiments.postTime==monthrange[0]).first()
-            # if isClassified:
-            #     continue
+            isClassified = self.new_session.query(Sentiments).\
+                    filter(Sentiments.classifier==classifier).\
+                    filter(Sentiments.postTime==monthrange[0]).first()
+            if isClassified:
+                continue
 
             print '{}--{} :'.format(monthrange[0], monthrange[1]),
             # sys.stdout.flush()
@@ -222,6 +222,8 @@ class sentiment_analysis:
     def polarity(self, docs, NaiveBayes=None, Vader=None, st=None):
         score = 0
         total = len(docs)
+        if total == 0:
+            return
         if NaiveBayes:
             for doc in docs:
                 # doc_set = NaiveBayes.apply_features(docs, labeled=False)
@@ -240,6 +242,8 @@ class sentiment_analysis:
                 if sent:
                     score += sent
                     total += 1
+            if total == 0:
+                return
         
         return score / total        
 
@@ -248,7 +252,8 @@ class sentiment_analysis:
         # sys.stdout.flush()
         # calculate polarity score for each post
         score = self.polarity(post[1], NaiveBayes, Vader, st)
-        print "{0:.2f}".format(score)
+        if score:
+            print "{0:.2f}".format(score)
         
         classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
         sentiment = (post[0], score)
