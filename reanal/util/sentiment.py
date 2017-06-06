@@ -50,7 +50,7 @@ class sentiment_analysis:
         database = DB()
         self.session = database.get_session()
         self.new_session = database.new_session()
-        self.pool = ThreadPool(16)
+        self.pool = ThreadPool(24)
         self.stopwords = get_stopwords()
 
     def save_sentiment(self, url, classifier, sentiment):
@@ -67,6 +67,14 @@ class sentiment_analysis:
         self.session.commit()
         self.session.remove()
 
+    def isClassified(self, key, classifier):
+        classified = self.new_session.query(Sentiments).\
+            filter(Sentiments.classifier==classifier).\
+            filter(Sentiments.city==key[0]).filter(Sentiments.state==key[1]).\
+            filter(Sentiments.postTime==key[2]).first()
+        # self.new_session.remove()
+        return True if classified else False
+
     def iter_posts(self, url, classifier):
         # create a generator to iterate through each post
         url_like = '%' + url + '%'
@@ -79,19 +87,14 @@ class sentiment_analysis:
         # To calculate tfidf of posts from each city, each month
         docs = {}
         for monthrange in iter_monthrange(start_date[0], end_date[0]):
-            # check if this month is already been classified (Add this in future)
-            isClassified = self.new_session.query(Sentiments).\
-                    filter(Sentiments.classifier==classifier).\
-                    filter(Sentiments.postTime==monthrange[0]).first()
-            if isClassified:
-                continue
+            
 
             print '{}--{} :'.format(monthrange[0], monthrange[1]),
             # sys.stdout.flush()
             count = 0
             monthlyPosts = posts.filter(Posts.postTime.between(monthrange[0], monthrange[1])).\
                     order_by(Posts.city, Posts.state)
-            # monthlyPosts = posts.filter(Users.city=='CAMBRIDGE').filter(Users.state=='MA').filter(Posts.postTime.between(monthrange[0], monthrange[1]))
+            # monthlyPosts = posts.filter(Posts.city=='Orange Park').filter(Posts.state=='FL').filter(Posts.postTime.between(monthrange[0], monthrange[1]))
             # print monthlyPosts.statement.compile(self.engine)
             text = []
             previous = ('', '')
@@ -105,6 +108,8 @@ class sentiment_analysis:
                 else: 
                     if text:
                         key = (previous[0], previous[1], monthrange[0])
+                        # check if this city is already been classified
+                        # if not self.isClassified(key, classifier):
                         count += 1
                         yield (key, text)
                         
@@ -115,6 +120,7 @@ class sentiment_analysis:
             # To yield the last city in the result query
             if text:
                 key = (post.city, post.state, monthrange[0])
+                # if not self.isClassified(key, classifier):
                 count += 1
                 yield (key, text)
                 
@@ -250,12 +256,16 @@ class sentiment_analysis:
     def process_sentiment(self, post, url=None, NaiveBayes=None, Vader=None, st=None):
         print "sentiment for {} (total: {}):".format(post[0], len(post[1]))
         # sys.stdout.flush()
-        # calculate polarity score for each post
+        classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
+        # check if this city is already been classified
+        if self.isClassified(post[0], classifier):
+            return
+
+        # calculate polarity score for each post        
         score = self.polarity(post[1], NaiveBayes, Vader, st)
         if score:
             print "{0:.2f}".format(score)
         
-        classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
         sentiment = (post[0], score)
         self.save_sentiment(url, classifier, sentiment)
 
