@@ -2,7 +2,8 @@
 *.pyc
 
 # Data
-/reanal/data/
+/reanal/data/activerain*
+/reanal/data/BiggerPockets*
 
 # Log
 /reanal/log/
