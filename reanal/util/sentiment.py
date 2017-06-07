@@ -46,11 +46,11 @@ def get_stopwords():
 
 
 class sentiment_analysis:
-    def __init__(self):
+    def __init__(self, threads=24):
         database = DB()
         self.session = database.get_session()
         self.new_session = database.new_session()
-        self.pool = ThreadPool(24)
+        self.pool = ThreadPool(threads)
         self.stopwords = get_stopwords()
 
     def save_sentiment(self, url, classifier, sentiment):
@@ -73,7 +73,7 @@ class sentiment_analysis:
             filter(Sentiments.city==key[0]).filter(Sentiments.state==key[1]).\
             filter(Sentiments.postTime==key[2]).first()
         # self.new_session.remove()
-        return True if classified else False
+        return True if classified.polarity != None else False
 
     def iter_posts(self, url, classifier):
         # create a generator to iterate through each post
