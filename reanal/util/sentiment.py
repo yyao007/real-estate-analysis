@@ -31,7 +31,7 @@ polarity_score = {
     'neg': -1.0,
     'negative': -1.0,
     '0': -1.0,
-    'neutral': 0.0, 
+    'neutral': 0.0,
 }
 
 def get_stopwords():
@@ -58,7 +58,7 @@ class sentiment_analysis:
         sent = Sentiments(
             site=url,
             city=key[0],
-            state=key[1], 
+            state=key[1],
             postTime=key[2],
             classifier=classifier,
             polarity=score,
@@ -73,7 +73,7 @@ class sentiment_analysis:
             filter(Sentiments.city==key[0]).filter(Sentiments.state==key[1]).\
             filter(Sentiments.postTime==key[2]).first()
         # self.new_session.remove()
-        return True if classified.polarity != None else False
+        return True if classified else False
 
     def iter_posts(self, url, classifier):
         # create a generator to iterate through each post
@@ -87,7 +87,7 @@ class sentiment_analysis:
         # To calculate tfidf of posts from each city, each month
         docs = {}
         for monthrange in iter_monthrange(start_date[0], end_date[0]):
-            
+
 
             print '{}--{} :'.format(monthrange[0], monthrange[1]),
             # sys.stdout.flush()
@@ -105,25 +105,25 @@ class sentiment_analysis:
                 if city == previous[0] and state == previous[1]:
                     # tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t)]
                     text.append(post.body)
-                else: 
+                else:
                     if text:
                         key = (previous[0], previous[1], monthrange[0])
                         # check if this city is already been classified
                         # if not self.isClassified(key, classifier):
                         count += 1
                         yield (key, text)
-                        
+
                     # tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t)]
                     text = [post.body]
                     previous = (city, state)
-                    
+
             # To yield the last city in the result query
             if text:
                 key = (post.city, post.state, monthrange[0])
                 # if not self.isClassified(key, classifier):
                 count += 1
                 yield (key, text)
-                
+
             print 'total: {}'.format(count)
 
     def load_tweets(self):
@@ -149,8 +149,8 @@ class sentiment_analysis:
     def load_web_reviews(self):
         stopwords = get_stopwords()
         filenames = [
-            '../data/amazon_cells_labelled.txt', 
-            '../data/imdb_labelled.txt', 
+            '../data/amazon_cells_labelled.txt',
+            '../data/imdb_labelled.txt',
             '../data/yelp_labelled.txt',
         ]
         reviews = {}
@@ -184,7 +184,7 @@ class sentiment_analysis:
         # cutoff = int(len(documents) * 0.1)
         # training_docs, testing_docs = documents[cutoff:], documents[:cutoff]
         print "Done!"
-        
+
         print "Extracting unigram features and applying to training data...",
         sys.stdout.flush()
         sentim_analyzer = SentimentAnalyzer(classifier=classifier)
@@ -223,7 +223,7 @@ class sentiment_analysis:
         sentim_analyzer = self.NaiveBayes_load()
         temp, training_set, testing_set = self.load_data()
         for key,value in sorted(sentim_analyzer.evaluate(testing_set).items()):
-            print('{0}: {1}'.format(key, value)) 
+            print('{0}: {1}'.format(key, value))
 
     def polarity(self, docs, NaiveBayes=None, Vader=None, st=None):
         score = 0
@@ -250,22 +250,22 @@ class sentiment_analysis:
                     total += 1
             if total == 0:
                 return
-        
-        return score / total        
+
+        return score / total
 
     def process_sentiment(self, post, url=None, NaiveBayes=None, Vader=None, st=None):
-        print "sentiment for {} (total: {}):".format(post[0], len(post[1]))
         # sys.stdout.flush()
         classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
         # check if this city is already been classified
         if self.isClassified(post[0], classifier):
             return
 
-        # calculate polarity score for each post        
+        print "sentiment for {} (total: {}):".format(post[0], len(post[1]))
+        # calculate polarity score for each post
         score = self.polarity(post[1], NaiveBayes, Vader, st)
         if score:
             print "{0:.2f}".format(score)
-        
+
         sentiment = (post[0], score)
         self.save_sentiment(url, classifier, sentiment)
 
@@ -286,11 +286,11 @@ class sentiment_analysis:
         #     # calculate polarity score for each post
         #     score = self.polarity(post[1], NaiveBayes, Vader, st)
         #     print "{0:.2f}".format(score)
-            
+
         #     classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
         #     sentiment = (post[0], score)
-        #     self.save_sentiment(url, classifier, sentiment)             
-    
+        #     self.save_sentiment(url, classifier, sentiment)
+
     def start(self, classifier, site):
         NaiveBayes = Vader = st = None
         if classifier == 'NaiveBayes':
@@ -303,13 +303,13 @@ class sentiment_analysis:
         self.classify_posts(site, NaiveBayes=NaiveBayes, Vader=Vader, st=st)
 
 if __name__ == '__main__':
-    
+
     urls = ['BiggerPockets', 'activerain']
     # urls = ['activerain']
     classifiers = ['NaiveBayes', 'Vader', 'Stanford']
     classifiers = ['NaiveBayes']
     NaiveBayes = Vader = st = None
-   
+
     for classifier in classifiers:
         sentiment = sentiment_analysis()
         if classifier == 'NaiveBayes':
@@ -347,4 +347,4 @@ if __name__ == '__main__':
 
 
 
-        
+
