@@ -91,7 +91,7 @@ class Sentiments(Base):
     classifier = Column(String(100), primary_key=True)
     polarity = Column(Float(precision=5))
 
-class DB:
+class DB(object):
     def __init__(self):
         self.engine = create_engine(connStr, pool_size=20, convert_unicode=True, echo=False)
         self.session_factory = sessionmaker(bind=self.engine)
@@ -107,6 +107,6 @@ class DB:
 
     def remove(self):
         self.Session.remove()
-        
+
 
 

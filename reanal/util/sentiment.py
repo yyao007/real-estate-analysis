@@ -45,7 +45,7 @@ def get_stopwords():
     return set(stopwords1 + stopwords2 + custom_stopwords)
 
 
-class sentiment_analysis:
+class sentiment_analysis(object):
     def __init__(self, threads=24):
         database = DB()
         self.session = database.get_session()

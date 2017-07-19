@@ -39,7 +39,7 @@ def iter_monthrange(start_date, end_date):
         start += timedelta(days=day)
 
 
-class Feature_extraction:
+class Feature_extraction(object):
     def __init__(self):
         database = DB()
         self.session = database.get_session() 

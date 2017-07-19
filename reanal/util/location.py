@@ -20,16 +20,16 @@ from datetime import datetime
     export STANFORDTOOLSDIR=$HOME
     export CLASSPATH=$STANFORDTOOLSDIR/stanford-ner-2016-10-31/stanford-ner.jar
     export STANFORD_MODELS=$STANFORDTOOLSDIR/stanford-ner-2016-10-31/classifiers
-  
+
   Alternative:
     pip install stanfordcorenlp (much faster)
 '''
 lock = Lock()
 
 def filter_func(w):
-    return len(w) < 2 or bool(re.search(r'[\d\@\.]|__', w)) 
+    return len(w) < 2 or bool(re.search(r'[\d\@\.]|__', w))
 
-class Location:
+class Location(object):
     def __init__(self):
         self.db = DB()
         self.session = self.db.get_session()
@@ -66,11 +66,11 @@ class Location:
                 abbr = self.convert.abbreviate(l)
                 # Only need to do further condition checking if all the
                 # locations appear same times.
-                if not abbr and not city:                
+                if not abbr and not city:
                     city = ' '.join(i[0].upper()+i[1:] for i in l.strip().lower().split())
                 elif not state:
                     state = abbr
-                   
+
             if not (city and state):
                 if city:
                     # with lock:
@@ -93,14 +93,14 @@ class Location:
                 city = l
                 states = [s.state for s in self.new_session.query(Cities).filter(Cities.city==city)]
                 state = states[0] if len(states) == 1 else orig_location[1]
-            location = (city, state)    
+            location = (city, state)
         # check if it is a valid location
         if location:
             exists = self.new_session.query(Cities).filter(Cities.city==location[0]).\
                 filter(Cities.state==location[1]).first()
             location = location if exists else (location[0], None)
             self.new_session.remove()
-    
+
         return location
 
     def get_location(self, posts):
@@ -158,7 +158,7 @@ class Location:
         city = orig_post.Users.city.encode('utf-8') if orig_post.Users.city else ''
         state = orig_post.Users.state.encode('utf-8') if orig_post.Users.state else ''
         orig_location = city, state
-        
+
         # updating_posts = [(post.Posts, orig_location) for post in posts.filter(Posts.city==None)]
         # locations = self.pool.map(self.get_location, updating_posts)
         for post in posts.filter(Posts.city==None):
@@ -166,10 +166,10 @@ class Location:
             location = self.get_location(updating_post)
             self.update_post(location)
         self.session.remove()
-        
+
         # return locations
-        
-              
+
+
     def process_posts(self):
         print 'Extracting forums...',
         sys.stdout.flush()
@@ -178,7 +178,7 @@ class Location:
 
         urls = self.session.query(distinct(Posts.URL)).filter(Posts.city==None)
                 # .yield_per(100).enable_eagerloads(False)
-        
+
         # count = 0
         # for url in urls:
             # if count % 100 == 0:
@@ -190,8 +190,8 @@ class Location:
             #     self.update_post(location)
 
         self.pool.map(self.extract_location, urls)
-    
-                
+
+
 if __name__ == '__main__':
     loc = Location()
 

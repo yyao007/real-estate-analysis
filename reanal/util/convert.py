@@ -8,7 +8,7 @@ import os
 path = os.path.dirname(__file__)
 filename = os.path.join(path, '../data/abbr.txt')
 
-class Convert:
+class Convert(object):
     def __init__(self, file=filename):
         db = DB()
         self.session = db.get_session()
@@ -90,7 +90,7 @@ class Convert:
         elif task == 'city':
             print "Start normalizing cities..."
             count = self.norm_city()
-            print "Done! {} cities changed".format(count)        
+            print "Done! {} cities changed".format(count)
 
 
 if __name__ == '__main__':
