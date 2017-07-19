@@ -23,7 +23,10 @@ def process_features(job, site):
 
 @timeit
 def process_sentiment(classifier, site):
-    sentiment = sentiment_analysis()
+    core = 24
+    if classifier == 'Stanford':
+        core = 2
+    sentiment = sentiment_analysis(core)
     sentiment.start(classifier, site)
 
 @timeit
@@ -54,7 +57,7 @@ def get_parser():
   convert: simplify user's city and state''')
     parser.add_argument('-a', '--activerain', action='store_true',
                 help='Process activerain (default: both)')
-    parser.add_argument('-b', '--biggerpockets', action='store_true', 
+    parser.add_argument('-b', '--biggerpockets', action='store_true',
                 help='Process BiggerPockets (default: both)')
     parser.add_argument('-j', '--job', choices=jobs, default='key',
                 metavar='JOB', help='''Job to do. Use this flag with features (default: %(default)s)
@@ -63,10 +66,10 @@ def get_parser():
   save: save all the posts to file''')
     parser.add_argument('-c', choices=classifiers, default=classifiers,
                 dest='classifiers', metavar='CLS', nargs='+',
-                help='''Classifiers used to classify sentiment. Use this flag with sentiment 
+                help='''Classifiers used to classify sentiment. Use this flag with sentiment
   default: %(default)s''')
     parser.add_argument('-n', '--norm', choices=norms, metavar='NORM',
-                help='''City or state to normalize. Use this flag with convert 
+                help='''City or state to normalize. Use this flag with convert
   options: %(choices)s''')
     return parser
 
