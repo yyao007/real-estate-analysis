@@ -64,7 +64,7 @@ Because the [Stanford CoreNLP](https://stanfordnlp.github.io/CoreNLP/index.html)
 $ # Download the newest CoreNLP
 $ wget http://nlp.stanford.edu/software/stanford-corenlp-full-2016-10-31.zip
 $ unzip stanford-corenlp-full-2016-10-31.zip
-$ java -mx4g -cp /path/to/stanford-corenlp-full-2016-10-31/* edu.stanford.nlp.pipeline.StanfordCoreNLPServer -port 9000 -timeout 15000 -quiet 1
+$ java -mx4g -cp "/home/yyao009/stanford-corenlp-full-2016-10-31/*" edu.stanford.nlp.pipeline.StanfordCoreNLPServer -annotators "sentiment" -threads 4 -port 9000 -timeout 30000 -quiet 1
 ```
 Or, if you want to start the server in the program, change the following lines in [util/location.py](https://github.com/yyao007/real-estate-analysis/blob/master/reanal/util/location.py#L37):
 ```python

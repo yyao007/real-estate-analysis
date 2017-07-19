@@ -87,7 +87,6 @@ class sentiment_analysis:
         # To calculate tfidf of posts from each city, each month
         docs = {}
         for monthrange in iter_monthrange(start_date[0], end_date[0]):
-
             print '{}--{} :'.format(monthrange[0], monthrange[1]),
             # sys.stdout.flush()
             count = 0
