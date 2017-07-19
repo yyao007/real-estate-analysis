@@ -75,16 +75,17 @@ class sentiment_analysis(object):
         # self.new_session.remove()
         return True if classified else False
 
-    def iter_posts(self, url, classifier):
+    def iter_posts(self, url, classifier, start_date=None, end_date=None):
         # create a generator to iterate through each post
         url_like = '%' + url + '%'
         posts = self.session.query(Posts.body, Posts.city, Posts.state).\
                 filter(Posts.URL.like(url_like)).filter(func.length(Posts.state)==2)
         # location = self.session.query(Users.city, Users.state).filter(Users.source.like(url_like)).filter(func.length(Users.state)==2).group_by(Users.city, Users.state)
-        start_date = self.session.query(Posts.postTime).filter(Posts.URL.like(url_like)).order_by(Posts.postTime).first()
-        end_date = self.session.query(Posts.postTime).filter(Posts.URL.like(url_like)).order_by(Posts.postTime.desc()).first()
+        if not start_date:
+            start_date = self.session.query(Posts.postTime).filter(Posts.URL.like(url_like)).order_by(Posts.postTime).first()
+        if not end_date:
+            end_date = self.session.query(Posts.postTime).filter(Posts.URL.like(url_like)).order_by(Posts.postTime.desc()).first()
 
-        # To calculate tfidf of posts from each city, each month
         docs = {}
         for monthrange in iter_monthrange(start_date[0], end_date[0]):
             print '{}--{} :'.format(monthrange[0], monthrange[1]),
@@ -268,10 +269,17 @@ class sentiment_analysis(object):
         self.save_sentiment(url, classifier, sentiment)
 
     def classify_posts(self, url, NaiveBayes=None, Vader=None, st=None):
-        print "Calculating sentiment for {}".format(url)
         classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
+        last_month = self.session.query(Sentiments.postTime).\
+            filter(Sentiments.classifier==classifier).filter(Sentiments.site==url).\
+            order_by(Sentiments.postTime.desc()).first()
+        this_month = None
+        if last_month:
+            month = last_month[0].month + 1
+            this_month = last_month[0].replace(month=month),
+        print "Calculating sentiment for {} from {}".format(url, this_month)
         self.pool.map(partial(self.process_sentiment, url=url, NaiveBayes=NaiveBayes,\
-                            Vader=Vader, st=st), self.iter_posts(url, classifier))
+            Vader=Vader, st=st), self.iter_posts(url, classifier, start_date=this_month))
 
 
         # count = 0
