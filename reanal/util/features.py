@@ -183,13 +183,15 @@ class Feature_extraction:
         
         return dict_tfidf
 
-    def extract_posts(self, url):
+    def extract_posts(self, url, start_date=None, end_date=None):
         url_like = '%' + url + '%'
         posts = self.session.query(Posts.body, Posts.city, Posts.state).\
                 filter(Posts.URL.like(url_like)).filter(func.length(Posts.state)==2)
         # location = self.session.query(Users.city, Users.state).filter(Users.source.like(url_like)).filter(func.length(Users.state)==2).group_by(Users.city, Users.state)
-        start_date = self.session.query(Posts.postTime).filter(Posts.URL.like(url_like)).order_by(Posts.postTime).first()
-        end_date = self.session.query(Posts.postTime).filter(Posts.URL.like(url_like)).order_by(Posts.postTime.desc()).first()
+        if not start_date:
+            start_date = self.session.query(Posts.postTime).filter(Posts.URL.like(url_like)).order_by(Posts.postTime).first()
+        if not end_date:
+            end_date = self.session.query(Posts.postTime).filter(Posts.URL.like(url_like)).order_by(Posts.postTime.desc()).first()
 
         # To calculate tfidf of posts from each city, each month
         docs = {}
@@ -226,26 +228,24 @@ class Feature_extraction:
 
         return docs
 
-    def find_key_phrase(self, url, update=False):
+    def find_key_phrase(self, url):
         '''
         
         Parameters
         ----------
         url: string {'BiggerPockets', 'activerain'}
             To seperate posts from two websites
-
-        update: boolean, default=False
-            if update set to True, this function would fill the keyphrase table
-            with newly added data. Default to fill the table with all the posts.
-        
         '''
-        if update:
-            print 'Updating keyphrase table...'
-            pass
+        last_month = self.session.query(Keyphrase.postTime).filter(Keyphrase.site==url).order_by(Keyphrase.postTime.desc()).first()
+        this_month = None
+        if last_month:
+            month = last_month[0].month + 1
+            this_month = last_month[0].replace(month=month),
+            print '{}Updating keyphrase table for {} from {}{}'.format(seperator, url, this_month[0], seperator)
 
         print '{}Extracting posts from {}{}'.format(seperator, url, seperator)
         # seperate posts from BiggerPockets and activerain
-        docs = self.extract_posts(url)
+        docs = self.extract_posts(url, start_date=this_month)
 
         print '{}Calculating TFIDF for {}{}'.format(seperator, url, seperator)         
         print 'total docs: {}'.format(len(docs))
