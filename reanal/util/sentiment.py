@@ -67,6 +67,17 @@ class sentiment_analysis(object):
         self.session.commit()
         self.session.remove()
 
+    def save_post_sentiment(self, post, classifier, postScore):
+        postSent = PostSentiment(
+            URL=post.URL,
+            replyid=post.replyid,
+            classifier=classifier,
+            polarity=score,
+        )
+        self.session.add(postSent)
+        self.session.commit()
+        self.session.remove()
+
     def isClassified(self, key, classifier):
         classified = self.new_session.query(Sentiments).\
             filter(Sentiments.classifier==classifier).\
@@ -78,7 +89,7 @@ class sentiment_analysis(object):
     def iter_posts(self, url, classifier, start_date=None, end_date=None):
         # create a generator to iterate through each post
         url_like = '%' + url + '%'
-        posts = self.session.query(Posts.body, Posts.city, Posts.state).\
+        posts = self.session.query(Posts.URL, Posts.replyid, Posts.body, Posts.city, Posts.state).\
                 filter(Posts.URL.like(url_like)).filter(func.length(Posts.state)==2)
         # location = self.session.query(Users.city, Users.state).filter(Users.source.like(url_like)).filter(func.length(Users.state)==2).group_by(Users.city, Users.state)
         if not start_date:
@@ -86,7 +97,6 @@ class sentiment_analysis(object):
         if not end_date:
             end_date = self.session.query(Posts.postTime).filter(Posts.URL.like(url_like)).order_by(Posts.postTime.desc()).first()
 
-        docs = {}
         for monthrange in iter_monthrange(start_date[0], end_date[0]):
             print '{}--{} :'.format(monthrange[0], monthrange[1]),
             # sys.stdout.flush()
@@ -103,7 +113,7 @@ class sentiment_analysis(object):
                 state = post.state.strip().upper()
                 if city == previous[0] and state == previous[1]:
                     # tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t)]
-                    text.append(post.body)
+                    text.append(post)
                 else:
                     if text:
                         key = (previous[0], previous[1], monthrange[0])
@@ -113,7 +123,8 @@ class sentiment_analysis(object):
                         yield (key, text)
 
                     # tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t)]
-                    text = [post.body]
+                    data = {'url': post.URL, 'replyid': post.replyid, 'body': post.body}
+                    text = [post]
                     previous = (city, state)
 
             # To yield the last city in the result query
@@ -224,40 +235,40 @@ class sentiment_analysis(object):
         for key,value in sorted(sentim_analyzer.evaluate(testing_set).items()):
             print('{0}: {1}'.format(key, value))
 
-    def polarity(self, docs, NaiveBayes=None, Vader=None, st=None):
+    def polarity(self, posts, NaiveBayes=None, Vader=None, st=None):
+        classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
         score = 0
-        total = len(docs)
+        total = 0
+        for post in posts:
+            postScore = 0
+            if NaiveBayes:
+                tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t, self.stopwords)]
+                sent = NaiveBayes.classify(tokens)
+                postScore = polarity_score[sent]
+                score += postScore
+            elif Vader:
+                postScore = Vader.polarity_scores(post.body)['compound']
+                score += postScore
+            elif st:
+                sent = st.sentiment(post.body)
+                if not sent:
+                    total -= 1
+                else:
+                    postScore = sent
+                    score += postScore
+            total += 1
+            self.save_post_sentiment(post, classifier, postScore)
+
         if total == 0:
             return
-        if NaiveBayes:
-            for doc in docs:
-                # doc_set = NaiveBayes.apply_features(docs, labeled=False)
-                # sents = NaiveBayes.classifier.classify_many(doc_set)
-                tokens = [t.lower() for t in word_tokenize(doc) if not filter_func(t, self.stopwords)]
-                sent = NaiveBayes.classify(tokens)
-                score += polarity_score[sent]
-        elif Vader:
-            for doc in docs:
-                # text = ' '.join(doc)
-                score += Vader.polarity_scores(doc)['compound']
-        elif st:
-            total = 0
-            for doc in docs:
-                sent = st.sentiment(doc)
-                if sent:
-                    score += sent
-                    total += 1
-            if total == 0:
-                return
-
         return score / total
 
     def process_sentiment(self, post, url=None, NaiveBayes=None, Vader=None, st=None):
         # sys.stdout.flush()
         classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
         # check if this city is already been classified
-        if self.isClassified(post[0], classifier):
-           return
+        # if self.isClassified(post[0], classifier):
+        #    return
 
         print "sentiment for {} (total: {}):".format(post[0], len(post[1]))
         # calculate polarity score for each post
@@ -265,37 +276,21 @@ class sentiment_analysis(object):
         if score:
             print "{0:.2f}".format(score)
 
-        sentiment = (post[0], score)
-        self.save_sentiment(url, classifier, sentiment)
+        # sentiment = (post[0], score)
+        # self.save_sentiment(url, classifier, sentiment)
 
     def classify_posts(self, url, NaiveBayes=None, Vader=None, st=None):
         classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
-        last_month = self.session.query(Sentiments.postTime).\
-            filter(Sentiments.classifier==classifier).filter(Sentiments.site==url).\
-            order_by(Sentiments.postTime.desc()).first()
         this_month = None
-        if last_month:
-            month = last_month[0].month + 1
-            this_month = last_month[0].replace(month=month),
+        # last_month = self.session.query(Sentiments.postTime).\
+        #     filter(Sentiments.classifier==classifier).filter(Sentiments.site==url).\
+        #     order_by(Sentiments.postTime.desc()).first()
+        # if last_month:
+        #     month = last_month[0].month + 1
+        #     this_month = last_month[0].replace(month=month),
         print "Calculating sentiment for {} from {}".format(url, this_month)
         self.pool.map(partial(self.process_sentiment, url=url, NaiveBayes=NaiveBayes,\
             Vader=Vader, st=st), self.iter_posts(url, classifier, start_date=this_month))
-
-
-        # count = 0
-        # for post in self.iter_posts(url):
-        #     if count % 100 == 0:
-        #         print 'classified {} posts'.format(count)
-        #     count += 1
-        #     print "sentiment for {} (total: {}):".format(post[0], len(post[1])),
-        #     sys.stdout.flush()
-        #     # calculate polarity score for each post
-        #     score = self.polarity(post[1], NaiveBayes, Vader, st)
-        #     print "{0:.2f}".format(score)
-
-        #     classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
-        #     sentiment = (post[0], score)
-        #     self.save_sentiment(url, classifier, sentiment)
 
     def start(self, classifier, site):
         NaiveBayes = Vader = st = None
@@ -330,27 +325,3 @@ if __name__ == '__main__':
             sentiment.classify_posts(url, NaiveBayes=NaiveBayes, Vader=Vader, st=st)
             end_time = datetime.now()
             print 'Total time for {} using {}: {}'.format(url, classifier, end_time - start_time)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

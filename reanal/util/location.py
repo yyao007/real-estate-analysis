@@ -205,16 +205,3 @@ if __name__ == '__main__':
     #             order_by(Posts.URL, Posts.replyid)
     # pool = ThreadPool(8)
     # pool.map(loc.process_post, all_posts)
-
-
-
-
-
-
-
-
-
-
-
-
-

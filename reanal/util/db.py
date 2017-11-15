@@ -9,9 +9,11 @@ from sqlalchemy.dialects.mysql import INTEGER
 from sqlalchemy.ext.declarative import declarative_base
 
 connStr = 'mysql+mysqldb://yuan:931005@127.0.0.1/homeDB'
+connStr = 'mysql+mysqldb://root:931005@127.0.0.1/us'
 Base = declarative_base()
 class Posts(Base):
     __tablename__ = 'forumposts'
+
     URL = Column(String(500), primary_key=True)
     replyid = Column(Integer, primary_key=True)
     pid = Column(Integer) # post id
@@ -84,10 +86,19 @@ class Unigrams(Base):
 
 class Sentiments(Base):
     __tablename__ = 'sentiments'
+
     site = Column(String(500), primary_key=True)
     city = Column(String(100), primary_key=True)
     state = Column(String(50), primary_key=True)
     postTime = Column(DateTime(timezone=True), primary_key=True)
+    classifier = Column(String(100), primary_key=True)
+    polarity = Column(Float(precision=5))
+
+class PostSentiment(Base):
+    __tablename__ = 'postSentiment'
+
+    URL = Column(String(500), primary_key=True)
+    replyid = Column(Integer, primary_key=True)
     classifier = Column(String(100), primary_key=True)
     polarity = Column(Float(precision=5))
 
@@ -107,6 +118,3 @@ class DB(object):
 
     def remove(self):
         self.Session.remove()
-
-
-
