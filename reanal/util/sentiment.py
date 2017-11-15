@@ -72,7 +72,7 @@ class sentiment_analysis(object):
             URL=post.URL,
             replyid=post.replyid,
             classifier=classifier,
-            polarity=score,
+            polarity=postScore,
         )
         self.session.add(postSent)
         self.session.commit()
