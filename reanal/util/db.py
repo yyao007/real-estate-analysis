@@ -9,7 +9,7 @@ from sqlalchemy.dialects.mysql import INTEGER
 from sqlalchemy.ext.declarative import declarative_base
 
 connStr = 'mysql+mysqldb://yuan:931005@127.0.0.1/homeDB'
-connStr = 'mysql+mysqldb://root:931005@127.0.0.1/us'
+# connStr = 'mysql+mysqldb://root:931005@127.0.0.1/us'
 Base = declarative_base()
 class Posts(Base):
     __tablename__ = 'forumposts'
