@@ -80,7 +80,7 @@ class sentiment_analysis(object):
         # self.new_session.remove()
         return True if classified else False
 
-    def iter_posts(self, url, classifier, start_date=None, end_date=None):
+    def iter_posts(self, url, start_date=None, end_date=None):
         # create a generator to iterate through each post
         url_like = '%' + url + '%'
         posts = self.session.query(Posts.URL, Posts.replyid, Posts.body, Posts.city, Posts.state).\
@@ -276,7 +276,7 @@ class sentiment_analysis(object):
             this_month = last_month[0].replace(month=month),
         print "Calculating sentiment for {} from {}".format(url, this_month)
         self.pool.map(partial(self.process_sentiment, url=url, NaiveBayes=NaiveBayes,\
-            Vader=Vader, st=st), self.iter_posts(url, classifier, start_date=this_month))
+            Vader=Vader, st=st), self.iter_posts(url, start_date=this_month))
 
     def start(self, classifier, site):
         NaiveBayes = Vader = st = None
