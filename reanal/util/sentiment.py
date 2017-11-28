@@ -53,30 +53,24 @@ class sentiment_analysis(object):
         self.pool = ThreadPool(threads)
         self.stopwords = get_stopwords()
 
-    def save_sentiment(self, url, classifier, sentiment):
+    def save_sentiment(self, url, sentiment):
         key, score = sentiment
         sent = Sentiments(
             site=url,
             city=key[0],
             state=key[1],
             postTime=key[2],
-            classifier=classifier,
-            polarity=score,
+            NaiveBayes=score['NaiveBayes'],
+            Vader=score['Vader']
         )
         self.session.add(sent)
         self.session.commit()
         self.session.remove()
 
-    def save_post_sentiment(self, post, classifier, postScore):
-        postSent = PostSentiment(
-            URL=post.URL,
-            replyid=post.replyid,
-            classifier=classifier,
-            polarity=postScore,
-        )
-        self.session.add(postSent)
+    def update_post_sentiment(self, post, score):
+        r = self.session.query(Posts).filter(Posts.URL==post.URL).\
+            filter(Posts.replyid==post.replyid).update(score)
         self.session.commit()
-        self.session.remove()
 
     def isClassified(self, key, classifier):
         classified = self.new_session.query(Sentiments).\
@@ -236,36 +230,29 @@ class sentiment_analysis(object):
             print('{0}: {1}'.format(key, value))
 
     def polarity(self, posts, NaiveBayes=None, Vader=None, st=None):
-        classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
-        score = 0
+        # classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
+        score = {'NaiveBayes': 0, 'Vader': 0}
         total = 0
         for post in posts:
             postScore = 0
-            if NaiveBayes:
-                tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t, self.stopwords)]
-                sent = NaiveBayes.classify(tokens)
-                postScore = polarity_score[sent]
-                score += postScore
-            elif Vader:
-                postScore = Vader.polarity_scores(post.body)['compound']
-                score += postScore
-            elif st:
-                sent = st.sentiment(post.body)
-                if not sent:
-                    total -= 1
-                else:
-                    postScore = sent
-                    score += postScore
+            tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t, self.stopwords)]
+            sent = NaiveBayes.classify(tokens)
+            score['NaiveBayes'] += polarity_score[sent]
+            score['Vader'] += Vader.polarity_scores(post.body)['compound']
+            # s = st.sentiment(post.body)
+            # if s:
+            #     score['Stanford'] += s
+
             total += 1
-            self.save_post_sentiment(post, classifier, postScore)
+            self.update_post_sentiment(post, score)
 
         if total == 0:
             return
-        return score / total
+        return dict(map(lambda k: (k, score[k]/total), score))
 
     def process_sentiment(self, post, url=None, NaiveBayes=None, Vader=None, st=None):
         # sys.stdout.flush()
-        classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
+        # classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
         # check if this city is already been classified
         # if self.isClassified(post[0], classifier):
         #    return
@@ -276,29 +263,29 @@ class sentiment_analysis(object):
         if score:
             print "{0:.2f}".format(score)
 
-        # sentiment = (post[0], score)
-        # self.save_sentiment(url, classifier, sentiment)
+        sentiment = (post[0], score)
+        self.save_sentiment(url, sentiment)
 
     def classify_posts(self, url, NaiveBayes=None, Vader=None, st=None):
-        classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
+        # classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
         this_month = None
-        # last_month = self.session.query(Sentiments.postTime).\
-        #     filter(Sentiments.classifier==classifier).filter(Sentiments.site==url).\
-        #     order_by(Sentiments.postTime.desc()).first()
-        # if last_month:
-        #     month = last_month[0].month + 1
-        #     this_month = last_month[0].replace(month=month),
+        last_month = self.session.query(Sentiments.postTime).\
+            filter(Sentiments.classifier==classifier).filter(Sentiments.site==url).\
+            order_by(Sentiments.postTime.desc()).first()
+        if last_month:
+            month = last_month[0].month + 1
+            this_month = last_month[0].replace(month=month),
         print "Calculating sentiment for {} from {}".format(url, this_month)
         self.pool.map(partial(self.process_sentiment, url=url, NaiveBayes=NaiveBayes,\
             Vader=Vader, st=st), self.iter_posts(url, classifier, start_date=this_month))
 
     def start(self, classifier, site):
         NaiveBayes = Vader = st = None
-        if classifier == 'NaiveBayes':
+        if 'NaiveBayes' in classifier:
             NaiveBayes = self.NaiveBayes_load()
-        elif classifier == 'Vader':
+        if 'Vader' in classifier:
             Vader = SentimentIntensityAnalyzer()
-        elif classifier == 'Stanford':
+        if 'Stanford' in classifier:
             st = StanfordCoreNLPPLUS('http://localhost')
         print '{}Classify posts from {} using {}{}'.format(seperator, site, classifier, seperator)
         self.classify_posts(site, NaiveBayes=NaiveBayes, Vader=Vader, st=st)
@@ -308,7 +295,7 @@ if __name__ == '__main__':
     urls = ['BiggerPockets', 'activerain']
     # urls = ['activerain']
     classifiers = ['NaiveBayes', 'Vader', 'Stanford']
-    classifiers = ['NaiveBayes']
+    classifiers = []
     NaiveBayes = Vader = st = None
 
     for classifier in classifiers:

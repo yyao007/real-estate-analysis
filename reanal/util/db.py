@@ -28,6 +28,8 @@ class Posts(Base):
     tags = Column(String(500))
     city = Column(String(100))
     state = Column(String(50))
+    NaiveBayes = Column(Float(precision=5))
+    Vader = Column(Float(precision=5))
 
 class Users(Base):
     __tablename__ = 'forumusers'
@@ -91,8 +93,8 @@ class Sentiments(Base):
     city = Column(String(100), primary_key=True)
     state = Column(String(50), primary_key=True)
     postTime = Column(DateTime(timezone=True), primary_key=True)
-    classifier = Column(String(100), primary_key=True)
-    polarity = Column(Float(precision=5))
+    NaiveBayes = Column(Float(precision=5))
+    Vader = Column(Float(precision=5))
 
 class PostSentiment(Base):
     __tablename__ = 'postSentiment'

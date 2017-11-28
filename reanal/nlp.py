@@ -94,9 +94,8 @@ if __name__ == '__main__':
     elif args.task == 'sentiment':
         from util.sentiment import sentiment_analysis
         for site in sites:
-            for classifier in args.classifiers:
-                print classifier, site
-                process_sentiment(classifier, site)
+            print args.classifiers, site
+            process_sentiment(args.classifiers, site)
 
     elif args.task == 'location':
         from util.location import Location
@@ -108,5 +107,3 @@ if __name__ == '__main__':
             print 'Error: Must specify a normalization'
             exit(0)
         process_convert(args.norm)
-
-
