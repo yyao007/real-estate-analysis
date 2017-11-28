@@ -5,7 +5,6 @@ from functools import wraps
 from datetime import datetime
 
 def timeit(f):
-    @wraps(f)
     def wrap(*args, **kw):
         ts = datetime.now()
         result = f(*args, **kw)
@@ -23,9 +22,7 @@ def process_features(job, site):
 
 @timeit
 def process_sentiment(classifier, site):
-    core = 24
-    if classifier == 'Stanford':
-        core = 2
+    core = 16
     sentiment = sentiment_analysis(core)
     sentiment.start(classifier, site)
 

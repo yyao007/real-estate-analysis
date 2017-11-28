@@ -269,8 +269,7 @@ class sentiment_analysis(object):
     def classify_posts(self, url, NaiveBayes=None, Vader=None, st=None):
         # classifier = 'NaiveBayes' if NaiveBayes else 'Vader' if Vader else 'Stanford' if st else ''
         this_month = None
-        last_month = self.session.query(Sentiments.postTime).\
-            filter(Sentiments.classifier==classifier).filter(Sentiments.site==url).\
+        last_month = self.session.query(Sentiments.postTime).filter(Sentiments.site==url).\
             order_by(Sentiments.postTime.desc()).first()
         if last_month:
             month = last_month[0].month + 1
