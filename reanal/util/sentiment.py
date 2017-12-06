@@ -261,7 +261,7 @@ class sentiment_analysis(object):
         # calculate polarity score for each post
         score = self.polarity(post[1], NaiveBayes, Vader, st)
         if score:
-            print "{0:.2f}".format(score)
+            print score
 
         sentiment = (post[0], score)
         self.save_sentiment(url, sentiment)
@@ -274,7 +274,7 @@ class sentiment_analysis(object):
         if last_month:
             month = last_month[0].month + 1
             this_month = last_month[0].replace(month=month),
-        print "Calculating sentiment for {} from {}".format(url, this_month)
+        print "Calculating sentiment for {} from {}".format(url, this_month[0])
         self.pool.map(partial(self.process_sentiment, url=url, NaiveBayes=NaiveBayes,\
             Vader=Vader, st=st), self.iter_posts(url, classifier, start_date=this_month))
 

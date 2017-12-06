@@ -39,7 +39,7 @@ def process_convert(norm):
 def get_parser():
     tasks = ['features', 'sentiment', 'location', 'convert']
     jobs = ['key', 'bigram', 'save']
-    classifiers = ['NaiveBayes', 'Vader', 'Stanford']
+    classifiers = ['NaiveBayes', 'Vader']
     norms = ['city', 'state']
 
     parser = argparse.ArgumentParser(
