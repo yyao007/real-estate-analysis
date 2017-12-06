@@ -22,8 +22,8 @@ $ ./start.sh # activerain crawler can run at the same time
 This step is fast
 ```
 $ cd /real-estate-analysis/reanal/
-$ python nlp.py convert state
-$ python nlp.py convert city
+$ python nlp.py convert -n state
+$ python nlp.py convert -n city
 ```
 #### 3. Extract location from each post
 This step finishes in one day (or a few hours)
