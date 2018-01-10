@@ -142,11 +142,11 @@ class ForumSpider(scrapy.Spider):
 
     def parse_users2(self, response):
         item = response.meta['item']
-        connections = response.xpath('//ul[@class="connections"]/li/span/text()').extract()
+        connections = response.xpath('//ul[@class="stats"]//p/text()').extract()
         connections = [i for i in connections if i.strip()]
-        item['colleagues'] = int(filter(unicode.isdigit, connections[0]))
-        item['followers'] = int(filter(unicode.isdigit, connections[1]))
-        item['following'] = int(filter(unicode.isdigit, connections[2]))
+        item['followers'] = int(filter(unicode.isdigit, connections[0]))
+        item['following'] = int(filter(unicode.isdigit, connections[1]))
+        item['colleagues'] = int(filter(unicode.isdigit, connections[2]))
         # return userItem first to meet the foreign key constraint
         self.users.add(item['uid'])
         yield item
@@ -186,7 +186,3 @@ class ForumSpider(scrapy.Spider):
         elif t[-2] in 'years':
             postTime = curr - relativedelta(years=td)
         return postTime
-
-
-
-
