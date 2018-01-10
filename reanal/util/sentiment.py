@@ -283,11 +283,11 @@ class sentiment_analysis(object):
         last_month = self.session.query(Sentiments.postTime).filter(Sentiments.site==url).\
             order_by(Sentiments.postTime.desc()).first()
         if last_month:
-            month = last_month[0].month + 1
+            month = 1 + last_month[0].month % 12
             this_month = last_month[0].replace(month=month),
-        print "Calculating sentiment for {} from {}".format(url, this_month[0])
+        print "Calculating sentiment for {} from {}".format(url, last_month[0])
         self.pool.map(partial(self.process_sentiment, url=url, NaiveBayes=NaiveBayes,\
-            Vader=Vader, st=st), self.iter_posts(url, start_date=this_month))
+            Vader=Vader, st=st), self.iter_posts(url, start_date=last_month))
 
     def start(self, classifier, site):
         NaiveBayes = Vader = st = None
