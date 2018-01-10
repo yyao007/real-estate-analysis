@@ -8,6 +8,7 @@
 from db import *
 from features import filter_func, iter_monthrange
 from sqlalchemy.sql import not_
+from sqlalchemy.dialects import mysql
 from corenlp import StanfordCoreNLPPLUS
 from nltk import word_tokenize
 from nltk.classify import NaiveBayesClassifier
@@ -293,24 +294,16 @@ class sentiment_analysis(object):
         self.classify_posts(site, NaiveBayes=NaiveBayes, Vader=Vader, st=st)
 
 if __name__ == '__main__':
-
-    urls = ['BiggerPockets', 'activerain']
-    # urls = ['activerain']
-    classifiers = ['NaiveBayes', 'Vader', 'Stanford']
-    classifiers = []
-    NaiveBayes = Vader = st = None
-
-    for classifier in classifiers:
-        sentiment = sentiment_analysis()
-        if classifier == 'NaiveBayes':
-            NaiveBayes = sentiment.NaiveBayes_load()
-        elif classifier == 'Vader':
-            Vader = SentimentIntensityAnalyzer()
-        elif classifier == 'Stanford':
-            st = StanfordCoreNLPPLUS('http://localhost')
-        for url in urls:
-            start_time = datetime.now()
-            print '{}Classify posts from {} using {}{}'.format(seperator, url, classifier, seperator)
-            sentiment.classify_posts(url, NaiveBayes=NaiveBayes, Vader=Vader, st=st)
-            end_time = datetime.now()
-            print 'Total time for {} using {}: {}'.format(url, classifier, end_time - start_time)
+    NaiveBayes = self.NaiveBayes_load()
+    Vader = SentimentIntensityAnalyzer()
+    sites = ['BiggerPockets', 'activerain']
+    print '{}Classify posts from {}{}'.format(seperator, site[0], seperator)
+    s = sentiment_analysis()
+    url_like = '%' + url + '%'
+    occupation_like = '%agent%'
+    posts = s.session.query(Posts.URL, Posts.replyid, Posts.body, Posts.city, Posts.state).\
+            filter(Posts.uid==Users.uid).filter(not_(Users.occupation.like(occupation_like))).\
+            filter(Posts.URL.like(url_like)).filter(func.length(Posts.state)==2)
+    # self.classify_posts(site[0], NaiveBayes=NaiveBayes, Vader=Vader)
+    print str(posts)
+    print str(posts.statement.compile(dialect=mysql.dialect()))
