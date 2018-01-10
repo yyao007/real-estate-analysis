@@ -7,6 +7,7 @@
 
 from db import *
 from features import filter_func, iter_monthrange
+from sqlalchemy.sql import not_
 from corenlp import StanfordCoreNLPPLUS
 from nltk import word_tokenize
 from nltk.classify import NaiveBayesClassifier
@@ -83,7 +84,9 @@ class sentiment_analysis(object):
     def iter_posts(self, url, start_date=None, end_date=None):
         # create a generator to iterate through each post
         url_like = '%' + url + '%'
+        occupation_like = '%agent%'
         posts = self.session.query(Posts.URL, Posts.replyid, Posts.body, Posts.city, Posts.state).\
+                filter(Posts.uid==Users.uid).filter(not_(Users.occupation.like(occupation_like))).\
                 filter(Posts.URL.like(url_like)).filter(func.length(Posts.state)==2)
         # location = self.session.query(Users.city, Users.state).filter(Users.source.like(url_like)).filter(func.length(Users.state)==2).group_by(Users.city, Users.state)
         if not start_date:
