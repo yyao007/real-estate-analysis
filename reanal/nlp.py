@@ -22,7 +22,7 @@ def process_features(job, site):
 
 @timeit
 def process_sentiment(classifier, site):
-    core = 8
+    core = 16
     sentiment = sentiment_analysis(core)
     sentiment.start(classifier, site)
 

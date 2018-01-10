@@ -57,7 +57,7 @@ class sentiment_analysis(object):
 
     def save_sentiment(self, url, sentiment):
         key, score = sentiment
-        sent = Sentiments(
+        insert_stmt = mysql.insert(Sentiments).values(
             site=url,
             city=key[0],
             state=key[1],
@@ -65,8 +65,11 @@ class sentiment_analysis(object):
             NaiveBayes=score['NaiveBayes'],
             Vader=score['Vader']
         )
-        self.session.add(sent)
-        self.session.commit()
+        on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(
+            NaiveBayes=score['NaiveBayes'],
+            Vader=score['Vader']
+        )
+        self.session.execute(on_duplicate_key_stmt)
         self.session.remove()
 
     def update_post_sentiment(self, post, score):
@@ -86,8 +89,8 @@ class sentiment_analysis(object):
         # create a generator to iterate through each post
         url_like = '%' + url + '%'
         occupation_like = '%agent%'
-        posts = self.session.query(Posts.URL, Posts.replyid, Posts.body, Posts.city, Posts.state).\
-                filter(Posts.uid==Users.uid).filter(not_(Users.occupation.like(occupation_like))).\
+        posts = self.session.query(Posts.URL, Posts.replyid, Posts.body, Posts.city, Posts.state, Posts.NaiveBayes, Posts.Vader).\
+                join(Users, Posts.uid==Users.uid).filter(not_(Users.occupation.like(occupation_like))).\
                 filter(Posts.URL.like(url_like)).filter(func.length(Posts.state)==2)
         # location = self.session.query(Users.city, Users.state).filter(Users.source.like(url_like)).filter(func.length(Users.state)==2).group_by(Users.city, Users.state)
         if not start_date:
@@ -121,7 +124,6 @@ class sentiment_analysis(object):
                         yield (key, text)
 
                     # tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t)]
-                    data = {'url': post.URL, 'replyid': post.replyid, 'body': post.body}
                     text = [post]
                     previous = (city, state)
 
@@ -238,17 +240,22 @@ class sentiment_analysis(object):
         score = {'NaiveBayes': 0, 'Vader': 0}
         total = 0
         for post in posts:
-            postScore = 0
-            tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t, self.stopwords)]
-            sent = NaiveBayes.classify(tokens)
-            score['NaiveBayes'] += polarity_score[sent]
-            score['Vader'] += Vader.polarity_scores(post.body)['compound']
+            if not post.NaiveBayes:
+                tokens = [t.lower() for t in word_tokenize(post.body) if not filter_func(t, self.stopwords)]
+                sent = NaiveBayes.classify(tokens)
+                score['NaiveBayes'] += polarity_score[sent]
+            else:
+                score['NaiveBayes'] += post.NaiveBayes
+            if not post.Vader:
+                score['Vader'] += Vader.polarity_scores(post.body)['compound']
+            else:
+                score['Vader'] += post.Vader
             # s = st.sentiment(post.body)
             # if s:
             #     score['Stanford'] += s
-
             total += 1
-            self.update_post_sentiment(post, score)
+            if not post.NaiveBayes and not post.Vader:
+                self.update_post_sentiment(post, score)
 
         if total == 0:
             return
