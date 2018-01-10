@@ -294,15 +294,15 @@ class sentiment_analysis(object):
         self.classify_posts(site, NaiveBayes=NaiveBayes, Vader=Vader, st=st)
 
 if __name__ == '__main__':
-    NaiveBayes = self.NaiveBayes_load()
+    s = sentiment_analysis()
+    NaiveBayes = s.NaiveBayes_load()
     Vader = SentimentIntensityAnalyzer()
     sites = ['BiggerPockets', 'activerain']
-    print '{}Classify posts from {}{}'.format(seperator, site[0], seperator)
-    s = sentiment_analysis()
-    url_like = '%' + url + '%'
+    print '{}Classify posts from {}{}'.format(seperator, sites[0], seperator)
+    url_like = '%biggerpockets%'
     occupation_like = '%agent%'
     posts = s.session.query(Posts.URL, Posts.replyid, Posts.body, Posts.city, Posts.state).\
-            filter(Posts.uid==Users.uid).filter(not_(Users.occupation.like(occupation_like))).\
+            join(Users, Posts.uid==Users.uid).filter(not_(Users.occupation.like(occupation_like))).\
             filter(Posts.URL.like(url_like)).filter(func.length(Posts.state)==2)
     # self.classify_posts(site[0], NaiveBayes=NaiveBayes, Vader=Vader)
     print str(posts)
