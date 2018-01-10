@@ -286,6 +286,7 @@ class sentiment_analysis(object):
             month = 1 + last_month[0].month % 12
             this_month = last_month[0].replace(month=month),
         print "Calculating sentiment for {} from {}".format(url, last_month[0])
+        #last_month = None
         self.pool.map(partial(self.process_sentiment, url=url, NaiveBayes=NaiveBayes,\
             Vader=Vader, st=st), self.iter_posts(url, start_date=last_month))
 
